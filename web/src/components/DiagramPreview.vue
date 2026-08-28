@@ -245,10 +245,10 @@ onBeforeUnmount(() => {
         <button type="button" class="tool-btn" title="复制 PNG (白底)" @click="copyPng">
           <span v-html="iconSvg('copy', 15)"></span>
         </button>
-        <button type="button" class="tool-btn" title="导出透明 PNG" @click="downloadPng">
-          <span v-html="iconSvg('download', 15)"></span>
+        <button type="button" class="tool-btn" title="导出透明 PNG" aria-label="导出 PNG" @click="downloadPng">
+          <span v-html="iconSvg('image', 15)"></span>
         </button>
-        <button type="button" class="tool-btn" title="导出 SVG 矢量图" @click="downloadSvg">
+        <button type="button" class="tool-btn" title="导出 SVG 矢量图" aria-label="导出 SVG" @click="downloadSvg">
           <span v-html="iconSvg('svg', 15)"></span>
         </button>
 

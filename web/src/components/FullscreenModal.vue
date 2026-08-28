@@ -196,7 +196,7 @@ onBeforeUnmount(() => {
               <span class="btn-text">复制图片</span>
             </button>
             <button type="button" class="tool-btn" title="导出透明 PNG" aria-label="导出 PNG" @click="downloadPng">
-              <span v-html="iconSvg('download', 16)"></span>
+              <span v-html="iconSvg('image', 16)"></span>
               <span class="btn-text">导出 PNG</span>
             </button>
             <button type="button" class="tool-btn" title="导出 SVG" aria-label="导出 SVG" @click="downloadSvg">

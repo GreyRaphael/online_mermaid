@@ -107,27 +107,15 @@ function formatDate(iso: string): string {
   >
     <!-- Header -->
     <div class="sidebar-header">
-      <div v-if="isMobile || !collapsed" class="header-title">
+      <div class="header-title">
         <span class="logo-emoji" aria-hidden="true">📊</span>
         <span class="title-text">图表库</span>
         <span class="count-badge" :title="`共 ${diagrams.length} 个图表`">{{ diagrams.length }}</span>
       </div>
 
-      <!-- Desktop Collapse Button -->
-      <button
-        v-if="!isMobile"
-        type="button"
-        class="icon-btn collapse-toggle-btn"
-        :title="collapsed ? '展开侧边栏' : '折叠侧边栏'"
-        :aria-label="collapsed ? '展开侧边栏' : '折叠侧边栏'"
-        @click="emit('toggleCollapse')"
-      >
-        <span v-html="iconSvg(collapsed ? 'chevron-right' : 'sidebar', 16)"></span>
-      </button>
-
       <!-- Mobile Close Button -->
       <button
-        v-else
+        v-if="isMobile"
         type="button"
         class="icon-btn close-drawer-btn"
         title="关闭抽屉"
@@ -260,16 +248,28 @@ function formatDate(iso: string): string {
   display: flex;
   flex-direction: column;
   width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
   height: 100%;
   background: var(--surface-raised);
   border-right: 1px solid var(--border);
-  transition: width 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    min-width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease,
+    border-color 180ms ease;
   flex-shrink: 0;
   overflow: hidden;
 }
 
 .sidebar-container.collapsed {
-  width: 48px;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-right-width: 0 !important;
+  border-right-color: transparent !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 .sidebar-header {
