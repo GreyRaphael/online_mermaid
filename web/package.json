@@ -10,14 +10,16 @@
   },
   "dependencies": {
     "dompurify": "^3.2.4",
-    "mermaid": "^11.4.1",
+    "mermaid": "11.15.0",
     "panzoom": "^9.4.3",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@types/dompurify": "^3.2.0",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.13.4",
     "@vitejs/plugin-vue": "^5.2.1",
+    "jsdom": "^30.0.1",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vue-tsc": "^2.2.0"

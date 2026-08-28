@@ -3,7 +3,7 @@ import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import DOMPurify from 'dompurify'
 import panzoom, { type PanZoom } from 'panzoom'
 import type { ResolvedTheme } from '@/composables/useTheme'
-import { ICON_PATHS, iconSvg } from '@/utils/icons'
+import { iconSvg } from '@/utils/icons'
 import { exportPngImage, exportSvgImage, svgToPngBlob } from '@/utils/export'
 
 const props = defineProps<{
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const previewContainerRef = ref<HTMLElement | null>(null)
-const canvasViewportRef = ref<HTMLElement | null>(null)
+const outputRef = ref<HTMLElement | null>(null)
 const renderedSvg = ref<string>('')
 const renderError = ref<string>('')
 const errorLine = ref<string>('')
@@ -41,11 +41,22 @@ function destroyPanzoom() {
   }
 }
 
+function preserveMermaidSize(output: HTMLElement): void {
+  const svg = output.querySelector<SVGSVGElement>('svg')
+  const viewBox = svg?.viewBox?.baseVal
+  if (!svg || !viewBox || viewBox.width <= 0 || viewBox.height <= 0) return
+
+  const naturalWidth = viewBox.width
+  svg.style.width = '100%'
+  svg.style.maxWidth = `${naturalWidth}px`
+  svg.style.height = 'auto'
+}
+
 function initPanzoom() {
   destroyPanzoom()
-  const el = canvasViewportRef.value
-  if (!el) return
-  const svg = el.querySelector('svg')
+  const output = outputRef.value
+  if (!output) return
+  const svg = output.querySelector<SVGSVGElement>('svg')
   if (!svg) return
 
   pzInstance = panzoom(svg, {
@@ -64,8 +75,8 @@ function resetZoom() {
 }
 
 function handleZoom(type: 'in' | 'out') {
-  if (!pzInstance || !canvasViewportRef.value) return
-  const rect = canvasViewportRef.value.getBoundingClientRect()
+  if (!pzInstance || !outputRef.value) return
+  const rect = outputRef.value.getBoundingClientRect()
   const cx = rect.width / 2
   const cy = rect.height / 2
   if (type === 'in') pzInstance.smoothZoom(cx, cy, 1.25)
@@ -79,6 +90,7 @@ async function renderDiagram(sourceCode: string) {
     renderError.value = ''
     errorLine.value = ''
     destroyPanzoom()
+    if (outputRef.value) outputRef.value.innerHTML = ''
     return
   }
 
@@ -91,26 +103,34 @@ async function renderDiagram(sourceCode: string) {
       startOnLoad: false,
       securityLevel: 'strict',
       theme: props.theme === 'night' ? 'dark' : 'default',
+      htmlLabels: false,
+      flowchart: { htmlLabels: false, curve: 'rounded' },
       fontFamily: getMermaidFontFamily(),
       suppressErrorRendering: true,
-      flowchart: { htmlLabels: false, curve: 'rounded' },
     })
 
     const id = `online-mermaid-${currentSeq}`
     const result = await mermaid.render(id, sourceCode)
     if (currentSeq !== renderSeq) return
 
-    renderedSvg.value = DOMPurify.sanitize(result.svg, {
+    const sanitized = DOMPurify.sanitize(result.svg, {
       USE_PROFILES: { svg: true, svgFilters: true },
       ADD_TAGS: ['style'],
-      ADD_ATTR: ['dominant-baseline'],
+      ADD_ATTR: ['dominant-baseline', 'alignment-baseline'],
       FORBID_TAGS: ['script', 'foreignObject', 'iframe', 'object', 'embed'],
     })
+
+    renderedSvg.value = sanitized
     renderError.value = ''
     errorLine.value = ''
 
     await nextTick()
-    initPanzoom()
+    const output = outputRef.value
+    if (output) {
+      output.innerHTML = sanitized
+      preserveMermaidSize(output)
+      initPanzoom()
+    }
   } catch (err: any) {
     if (currentSeq !== renderSeq) return
     const msg = err?.message || String(err)
@@ -119,6 +139,7 @@ async function renderDiagram(sourceCode: string) {
     const lineMatch = msg.match(/on line (\d+)/i) || msg.match(/line (\d+)/i)
     errorLine.value = lineMatch ? `第 ${lineMatch[1]} 行解析错误` : 'Mermaid 语法解析错误'
     destroyPanzoom()
+    if (outputRef.value) outputRef.value.innerHTML = ''
   }
 }
 
@@ -151,7 +172,7 @@ async function copyMermaidSource() {
 }
 
 async function copyPng() {
-  const svg = canvasViewportRef.value?.querySelector('svg')
+  const svg = outputRef.value?.querySelector('svg')
   if (!svg) return
   try {
     const blob = await svgToPngBlob(svg, { transparent: false })
@@ -163,7 +184,7 @@ async function copyPng() {
 }
 
 async function downloadPng() {
-  const svg = canvasViewportRef.value?.querySelector('svg')
+  const svg = outputRef.value?.querySelector('svg')
   if (!svg) return
   try {
     await exportPngImage(svg, 'mermaid-diagram.png', { transparent: true })
@@ -174,7 +195,7 @@ async function downloadPng() {
 }
 
 function downloadSvg() {
-  const svg = canvasViewportRef.value?.querySelector('svg')
+  const svg = outputRef.value?.querySelector('svg')
   if (!svg) return
   try {
     exportSvgImage(svg, 'mermaid-diagram.svg')
@@ -239,14 +260,14 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="preview-canvas-wrapper">
-      <div v-if="!renderError" ref="canvasViewportRef" class="canvas-viewport">
-        <div v-if="renderedSvg" class="svg-container" v-html="renderedSvg"></div>
-        <div v-else class="empty-state">
+      <div v-show="!renderError" class="canvas-viewport">
+        <div v-show="renderedSvg" ref="outputRef" class="mermaid-output" role="img" aria-label="Mermaid 图表"></div>
+        <div v-if="!renderedSvg" class="empty-state">
           <p>暂无图表内容，请在编辑器中输入 Mermaid 代码</p>
         </div>
       </div>
 
-      <div v-else class="error-container" role="alert">
+      <div v-if="renderError" class="error-container" role="alert">
         <div class="error-header">
           <span class="err-icon">⚠️</span>
           <span class="err-title">{{ errorLine }}</span>
@@ -352,26 +373,31 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  cursor: grab;
 }
 
-.canvas-viewport:active {
-  cursor: grabbing;
-}
-
-.svg-container {
+.mermaid-output {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
 }
 
-.svg-container :deep(svg) {
+.mermaid-output :deep(svg) {
+  display: block;
+  width: 100%;
   max-width: 100%;
-  max-height: 100%;
   height: auto;
+  margin: 0 auto;
+  overflow: visible;
+  cursor: grab;
   user-select: none;
+}
+
+.mermaid-output :deep(svg:active) {
+  cursor: grabbing;
 }
 
 .empty-state {
