@@ -1,0 +1,59 @@
+# Go build output and binaries
+/bin/
+/build/
+/online-mermaid
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go test cache and coverage
+coverage.txt
+profile.out
+
+# Frontend dependencies and builds
+/web/node_modules/
+/web/dist/
+/web/.pnpm-store/
+/web/coverage/
+/web/.vite/
+
+# Generated embedded frontend assets (keep placeholder so go:embed compiles on clean clone)
+/internal/webui/dist/*
+!/internal/webui/dist/index.html
+
+# Local SQLite databases & temporary data
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+/data/
+
+# Environment and local configs
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
