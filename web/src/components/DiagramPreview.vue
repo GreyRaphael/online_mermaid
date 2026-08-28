@@ -46,10 +46,10 @@ function preserveMermaidSize(output: HTMLElement): void {
   const viewBox = svg?.viewBox?.baseVal
   if (!svg || !viewBox || viewBox.width <= 0 || viewBox.height <= 0) return
 
-  const naturalWidth = viewBox.width
   svg.style.width = '100%'
-  svg.style.maxWidth = `${naturalWidth}px`
-  svg.style.height = 'auto'
+  svg.style.height = '100%'
+  svg.style.maxWidth = '100%'
+  svg.style.maxHeight = '100%'
 }
 
 function initPanzoom() {
@@ -404,9 +404,10 @@ onBeforeUnmount(() => {
 .mermaid-output :deep(svg) {
   display: block;
   width: 100%;
+  height: 100%;
   max-width: 100%;
-  height: auto;
-  margin: 0 auto;
+  max-height: 100%;
+  margin: auto;
   overflow: visible;
   cursor: grab;
   user-select: none;
