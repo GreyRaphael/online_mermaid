@@ -105,11 +105,12 @@ function formatDate(iso: string): string {
     :aria-modal="isMobile ? 'true' : undefined"
     :aria-label="isMobile ? '图表列表' : undefined"
   >
+    <!-- Header -->
     <div class="sidebar-header">
       <div v-if="isMobile || !collapsed" class="header-title">
-        <span class="logo-icon" v-html="iconSvg('sparkles', 16)"></span>
-        <span class="title-text">图表列表</span>
-        <span class="count-badge">{{ diagrams.length }}</span>
+        <span class="logo-emoji" aria-hidden="true">🧜‍♀️</span>
+        <span class="title-text">图表库</span>
+        <span class="count-badge" :title="`共 ${diagrams.length} 个图表`">{{ diagrams.length }}</span>
       </div>
 
       <!-- Desktop Collapse Button -->
@@ -118,6 +119,7 @@ function formatDate(iso: string): string {
         type="button"
         class="icon-btn collapse-toggle-btn"
         :title="collapsed ? '展开侧边栏' : '折叠侧边栏'"
+        :aria-label="collapsed ? '展开侧边栏' : '折叠侧边栏'"
         @click="emit('toggleCollapse')"
       >
         <span v-html="iconSvg(collapsed ? 'chevron-right' : 'sidebar', 16)"></span>
@@ -136,11 +138,14 @@ function formatDate(iso: string): string {
       </button>
     </div>
 
+    <!-- Content -->
     <div v-if="isMobile || !collapsed" class="sidebar-content">
+      <!-- Create New Diagram Action -->
       <div class="action-row">
         <button
           type="button"
           class="create-btn"
+          title="新建一个递增命名的图表"
           @click="
             () => {
               emit('create')
@@ -148,11 +153,12 @@ function formatDate(iso: string): string {
             }
           "
         >
-          <span v-html="iconSvg('plus', 15)"></span>
+          <span v-html="iconSvg('plus', 16)"></span>
           <span>新建图表</span>
         </button>
       </div>
 
+      <!-- Search Box -->
       <div class="search-box">
         <span class="search-icon" v-html="iconSvg('search', 14)"></span>
         <input
@@ -161,30 +167,34 @@ function formatDate(iso: string): string {
           class="search-input"
           placeholder="搜索图表名称..."
           spellcheck="false"
+          aria-label="搜索图表"
         />
         <button
           v-if="searchQuery"
           type="button"
           class="clear-search-btn"
           title="清空搜索"
+          aria-label="清空搜索"
           @click="searchQuery = ''"
         >
-          ×
+          ✕
         </button>
       </div>
 
-      <div class="diagram-list" role="list">
+      <!-- Diagram List -->
+      <div class="diagram-list" role="list" aria-label="图表列表">
         <div
           v-for="d in filteredDiagrams"
           :key="d.id"
           class="diagram-item"
           :class="{ active: d.id === activeId }"
           role="listitem"
+          :aria-current="d.id === activeId ? 'true' : undefined"
           @click="handleItemClick(d.id)"
           @dblclick="startRename(d)"
         >
           <div class="item-main">
-            <span class="item-icon" v-html="iconSvg('file-code', 15)"></span>
+            <span class="item-icon" v-html="iconSvg('file-code', 16)"></span>
 
             <div v-if="editingId === d.id" class="edit-wrapper" @click.stop>
               <input
@@ -192,6 +202,7 @@ function formatDate(iso: string): string {
                 v-model="editingTitle"
                 type="text"
                 class="rename-input"
+                aria-label="重命名图表"
                 @blur="saveRename"
                 @keydown.enter="saveRename"
                 @keydown.esc="cancelRename"
@@ -207,7 +218,8 @@ function formatDate(iso: string): string {
             <button
               type="button"
               class="item-btn"
-              title="重命名"
+              title="重命名图表"
+              aria-label="重命名"
               @click="startRename(d, $event)"
             >
               <span v-html="iconSvg('edit', 14)"></span>
@@ -215,7 +227,8 @@ function formatDate(iso: string): string {
             <button
               type="button"
               class="item-btn"
-              title="复制图表"
+              title="创建副本"
+              aria-label="复制"
               @click="handleDuplicate(d.id, $event)"
             >
               <span v-html="iconSvg('duplicate', 14)"></span>
@@ -223,7 +236,8 @@ function formatDate(iso: string): string {
             <button
               type="button"
               class="item-btn danger"
-              title="删除"
+              title="删除图表"
+              aria-label="删除"
               :disabled="diagrams.length <= 1"
               @click="handleDelete(d.id, d.title, $event)"
             >
@@ -263,7 +277,7 @@ function formatDate(iso: string): string {
   align-items: center;
   justify-content: space-between;
   height: var(--header-height);
-  padding: 0 12px;
+  padding: 0 14px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -277,22 +291,23 @@ function formatDate(iso: string): string {
   color: var(--text);
 }
 
-.logo-icon {
-  color: var(--accent);
-  display: flex;
+.logo-emoji {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .title-text {
-  letter-spacing: 0.2px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
 .count-badge {
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 10px;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .icon-btn {
@@ -315,8 +330,8 @@ function formatDate(iso: string): string {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 10px;
-  gap: 10px;
+  padding: 12px;
+  gap: 12px;
   overflow: hidden;
 }
 
@@ -330,29 +345,40 @@ function formatDate(iso: string): string {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  min-height: 36px;
-  padding: 6px 12px;
+  min-height: 38px;
+  padding: 8px 14px;
   background: var(--accent);
   color: #ffffff;
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
-  transition: opacity 120ms;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 25%, transparent);
+  transition: all 120ms ease;
 }
 
 .create-btn:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.create-btn:active {
+  transform: translateY(0);
 }
 
 .search-box {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  min-height: 34px;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
   background: var(--surface-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  transition: border-color 120ms;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent);
 }
 
 .search-icon {
@@ -371,9 +397,15 @@ function formatDate(iso: string): string {
 
 .clear-search-btn {
   color: var(--text-faint);
-  font-size: 16px;
+  font-size: 12px;
   line-height: 1;
-  padding: 2px 4px;
+  padding: 3px 5px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.clear-search-btn:hover {
+  color: var(--text);
 }
 
 .diagram-list {
@@ -382,7 +414,8 @@ function formatDate(iso: string): string {
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  padding-right: 2px;
 }
 
 .diagram-item {
@@ -390,10 +423,10 @@ function formatDate(iso: string): string {
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  min-height: 42px;
+  min-height: 46px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 100ms;
+  transition: background 120ms, border-color 120ms;
   border: 1px solid transparent;
 }
 
@@ -403,7 +436,7 @@ function formatDate(iso: string): string {
 
 .diagram-item.active {
   background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .diagram-item.active .item-title {
@@ -434,7 +467,7 @@ function formatDate(iso: string): string {
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  gap: 1px;
+  gap: 2px;
 }
 
 .item-title {
@@ -457,9 +490,9 @@ function formatDate(iso: string): string {
 
 .rename-input {
   width: 100%;
-  padding: 3px 6px;
+  padding: 4px 6px;
   font-size: 13px;
-  border: 1px solid var(--accent);
+  border: 1.5px solid var(--accent);
   border-radius: var(--radius-xs);
   background: var(--surface-raised);
   outline: none;
@@ -469,7 +502,7 @@ function formatDate(iso: string): string {
 .item-actions {
   display: none;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   margin-left: 6px;
 }
 
@@ -482,8 +515,8 @@ function formatDate(iso: string): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   transition: all 100ms;
@@ -505,30 +538,33 @@ function formatDate(iso: string): string {
 }
 
 .empty-hint {
-  padding: 32px 8px;
+  padding: 36px 8px;
   text-align: center;
   color: var(--text-faint);
   font-size: 13px;
 }
 
-/* Mobile Drawer Styles */
+/* Mobile Drawer Overlay Styles */
 .sidebar-container.mobile-drawer {
-  position: absolute;
+  position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
-  z-index: 50;
-  width: min(86vw, 320px);
-  height: 100%;
-  visibility: hidden;
-  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  width: min(84vw, 320px);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--surface-raised);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
   transform: translate3d(-105%, 0, 0);
   transition:
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
-    visibility 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  padding-top: max(8px, env(safe-area-inset-top));
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding-left: max(8px, env(safe-area-inset-left));
 }
 
 .sidebar-container.mobile-drawer.mobile-open {
@@ -538,7 +574,8 @@ function formatDate(iso: string): string {
 
 @media (max-width: 840px), (pointer: coarse) {
   .diagram-item {
-    min-height: 48px;
+    min-height: 50px;
+    padding: 10px 12px;
   }
 
   .item-actions {
@@ -546,8 +583,8 @@ function formatDate(iso: string): string {
   }
 
   .item-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
 }
 </style>

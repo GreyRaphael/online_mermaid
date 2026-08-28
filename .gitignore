@@ -20,6 +20,10 @@ profile.out
 /web/.pnpm-store/
 /web/coverage/
 /web/.vite/
+/web/test-results/
+/web/playwright-report/
+/playwright-report/
+/test-results/
 
 # Generated embedded frontend assets (keep placeholder so go:embed compiles on clean clone)
 /internal/webui/dist/*

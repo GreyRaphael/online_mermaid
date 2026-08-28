@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
             <button type="button" class="tool-btn" title="重置视角" @click="resetView">
               <span v-html="iconSvg('rotate-ccw', 16)"></span>
             </button>
-            <button type="button" class="tool-btn" title="旋转 90°" @click="handleRotate">
+            <button type="button" class="tool-btn" title="旋转 90°" aria-label="旋转" @click="handleRotate">
               <span v-html="iconSvg('rotate-cw', 16)"></span>
               <span class="btn-text">旋转</span>
             </button>
@@ -187,26 +187,26 @@ onBeforeUnmount(() => {
           <div class="toolbar-divider"></div>
 
           <div class="toolbar-group">
-            <button type="button" class="tool-btn" title="复制 Mermaid 源码" @click="copyMermaidSource">
+            <button type="button" class="tool-btn" title="复制 Mermaid 源码" aria-label="源码" @click="copyMermaidSource">
               <span v-html="iconSvg('file-code', 16)"></span>
               <span class="btn-text">源码</span>
             </button>
-            <button type="button" class="tool-btn" title="复制 PNG (白底)" @click="copyPng">
+            <button type="button" class="tool-btn" title="复制 PNG (白底)" aria-label="复制图片" @click="copyPng">
               <span v-html="iconSvg('copy', 16)"></span>
               <span class="btn-text">复制图片</span>
             </button>
-            <button type="button" class="tool-btn" title="导出透明 PNG" @click="downloadPng">
+            <button type="button" class="tool-btn" title="导出透明 PNG" aria-label="导出 PNG" @click="downloadPng">
               <span v-html="iconSvg('download', 16)"></span>
               <span class="btn-text">导出 PNG</span>
             </button>
-            <button type="button" class="tool-btn" title="导出 SVG" @click="downloadSvg">
+            <button type="button" class="tool-btn" title="导出 SVG" aria-label="导出 SVG" @click="downloadSvg">
               <span v-html="iconSvg('svg', 16)"></span>
               <span class="btn-text">SVG</span>
             </button>
           </div>
         </div>
 
-        <button type="button" class="tool-btn close-btn" title="关闭全屏" @click="emit('close')">
+        <button type="button" class="tool-btn close-btn" title="关闭全屏" aria-label="退出" @click="emit('close')">
           <span v-html="iconSvg('minimize', 16)"></span>
           <span class="btn-text">退出</span>
         </button>

@@ -14,6 +14,9 @@ test:
 	go test -v ./...
 	cd web && pnpm typecheck
 
+test-e2e: build
+	cd web && pnpm test:e2e
+
 run: build-server
 	./bin/online-mermaid
 

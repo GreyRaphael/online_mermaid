@@ -206,8 +206,9 @@ function downloadSvg() {
 }
 
 function triggerFullscreen() {
-  if (!renderedSvg.value) return
-  emit('openFullscreen', renderedSvg.value, props.code)
+  const svgHtml = outputRef.value?.innerHTML || renderedSvg.value
+  if (!svgHtml) return
+  emit('openFullscreen', svgHtml, props.code)
 }
 
 onBeforeUnmount(() => {
@@ -253,7 +254,7 @@ onBeforeUnmount(() => {
 
         <div class="toolbar-sep"></div>
 
-        <button type="button" class="tool-btn highlight" title="全屏查看" @click="triggerFullscreen">
+        <button type="button" class="tool-btn highlight" title="全屏查看" aria-label="全屏查看" @click="triggerFullscreen">
           <span v-html="iconSvg('maximize', 15)"></span>
         </button>
       </div>
