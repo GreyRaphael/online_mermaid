@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.24
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.1
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: 'web/pnpm-lock.yaml'
+
+      - name: Verify Go formatting
+        run: test -z "$(gofmt -l cmd internal)"
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go tests
+        run: go test -v -count=1 ./...
+
+      - name: Install Frontend Dependencies
+        run: pnpm --prefix web install --frozen-lockfile
+
+      - name: Frontend Typecheck & Build
+        run: pnpm --prefix web typecheck && pnpm --prefix web build
+
+      - name: Build Go binary
+        run: make build-server
+
+      - name: Install Playwright Chromium
+        run: pnpm --prefix web exec playwright install chromium
+
+      - name: Run Playwright E2E Tests
+        run: pnpm --prefix web test:e2e
