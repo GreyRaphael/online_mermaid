@@ -992,8 +992,8 @@ onBeforeUnmount(() => {
     height: 50%;
   }
 
-  .diagram-title {
-    max-width: 120px;
+  .diagram-title-block {
+    display: none !important;
   }
 
   .user-name {

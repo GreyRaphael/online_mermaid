@@ -108,7 +108,7 @@ function formatDate(iso: string): string {
     <!-- Header -->
     <div class="sidebar-header">
       <div v-if="isMobile || !collapsed" class="header-title">
-        <span class="logo-emoji" aria-hidden="true">🧜‍♀️</span>
+        <span class="logo-emoji" aria-hidden="true">📊</span>
         <span class="title-text">图表库</span>
         <span class="count-badge" :title="`共 ${diagrams.length} 个图表`">{{ diagrams.length }}</span>
       </div>
@@ -134,7 +134,7 @@ function formatDate(iso: string): string {
         aria-label="关闭抽屉"
         @click="emit('closeMobile')"
       >
-        <span v-html="iconSvg('minimize', 16)"></span>
+        <span v-html="iconSvg('x', 18)"></span>
       </button>
     </div>
 

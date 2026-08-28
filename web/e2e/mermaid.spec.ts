@@ -69,7 +69,9 @@ test.describe('Online Mermaid E2E', () => {
     await page.getByRole('button', { name: '新建图表' }).click()
 
     // Should have created a new diagram
-    await expect(page.locator('.diagram-title')).toBeVisible()
+    if (!isMobile) {
+      await expect(page.locator('.diagram-title')).toBeVisible()
+    }
 
     // Switch to Edit mode to edit code
     await page.getByRole('button', { name: '编辑' }).click()
