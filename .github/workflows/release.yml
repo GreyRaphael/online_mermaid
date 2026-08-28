@@ -115,7 +115,10 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: |
           mkdir -p dist_bin
-          go build -trimpath -ldflags="-s -w" -o dist_bin/${{ matrix.binary_name }} ./cmd/online-mermaid
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          GIT_SHA="${{ github.sha }}"
+          GIT_SHORT="${GIT_SHA:0:7}"
+          go build -trimpath -ldflags="-s -w -X online_mermaid/internal/config.Version=${{ github.ref_name }} -X online_mermaid/internal/config.GitCommit=${GIT_SHORT} -X online_mermaid/internal/config.BuildDate=${BUILD_DATE}" -o dist_bin/${{ matrix.binary_name }} ./cmd/online-mermaid
 
       - name: Create Release Archive
         run: |

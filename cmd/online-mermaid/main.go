@@ -24,16 +24,26 @@ import (
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "hash-password" {
-		fmt.Fprint(os.Stderr, "Password: ")
-		if err := hashPassword(os.Stdin, os.Stdout); err != nil {
-			fmt.Fprintln(os.Stderr, "hash password:", err)
-			os.Exit(1)
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "version", "-v", "--v", "-version", "--version":
+			fmt.Println(config.FormattedVersion())
+			return
+		case "hash-password":
+			fmt.Fprint(os.Stderr, "Password: ")
+			if err := hashPassword(os.Stdin, os.Stdout); err != nil {
+				fmt.Fprintln(os.Stderr, "hash password:", err)
+				os.Exit(1)
+			}
+			return
 		}
-		return
 	}
 
 	if err := runServer(os.Args[1:]); err != nil {
+		if errors.Is(err, config.ErrVersionRequested) {
+			fmt.Println(config.FormattedVersion())
+			return
+		}
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -42,7 +52,7 @@ func main() {
 func runServer(args []string) error {
 	cfg, err := config.Parse(args)
 	if err != nil {
-		return fmt.Errorf("configuration error: %w", err)
+		return err
 	}
 
 	database, err := db.Open(cfg.DBPath)
@@ -78,7 +88,7 @@ func runServer(args []string) error {
 	httpServer := app.HTTPServer()
 	serveErr := make(chan error, 1)
 	go func() {
-		slog.Info("online mermaid starting", "addr", cfg.Addr, "db", cfg.DBPath, "admin_user", cfg.Username)
+		slog.Info("online mermaid starting", "version", config.Version, "commit", config.GitCommit, "addr", cfg.Addr, "db", cfg.DBPath, "admin_user", cfg.Username)
 		serveErr <- httpServer.ListenAndServe()
 	}()
 

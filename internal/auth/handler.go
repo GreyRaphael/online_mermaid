@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"online_mermaid/internal/config"
 )
 
 type Handler struct {
@@ -66,7 +68,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, "internal_error", "Unable to create session")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"authenticated": true, "username": h.username})
+	writeJSON(w, http.StatusOK, map[string]any{"authenticated": true, "username": h.username, "version": config.Version})
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -80,10 +82,10 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Session(w http.ResponseWriter, r *http.Request) {
 	if session, ok := h.store.Get(r); ok {
-		writeJSON(w, http.StatusOK, map[string]any{"authenticated": true, "username": session.Username})
+		writeJSON(w, http.StatusOK, map[string]any{"authenticated": true, "username": session.Username, "version": config.Version})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"authenticated": false})
+	writeJSON(w, http.StatusOK, map[string]any{"authenticated": false, "version": config.Version})
 }
 
 func matchHost(originHost, targetHost string) bool {

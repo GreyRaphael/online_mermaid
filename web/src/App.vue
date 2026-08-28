@@ -55,6 +55,7 @@ onBeforeUnmount(() => {
     <MermaidView
       v-if="session.authenticated"
       :username="session.username || '用户'"
+      :version="session.version"
       @signed-out="handleSignedOut"
     />
     <LoginView v-else :initial-error="startupError" @authenticated="handleAuthenticated" />

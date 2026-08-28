@@ -22,7 +22,10 @@ import Toast from '@/components/Toast.vue'
 
 type ViewMode = 'preview' | 'edit' | 'split'
 
-const props = defineProps<{ username: string }>()
+const props = defineProps<{
+  username: string
+  version?: string
+}>()
 const emit = defineEmits<{ signedOut: [] }>()
 
 const { resolved } = useTheme()
@@ -482,6 +485,7 @@ onBeforeUnmount(() => {
                   <div class="user-details">
                     <p class="user-title">{{ username }}</p>
                     <p class="user-status">在线 · SQLite3 已挂载</p>
+                    <p v-if="version" class="user-version">{{ version }}</p>
                   </div>
                 </div>
 
@@ -841,6 +845,13 @@ onBeforeUnmount(() => {
   font-size: 10px;
   color: var(--accent);
   font-weight: 500;
+}
+
+.user-version {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  margin-top: 1px;
 }
 
 .dropdown-divider {

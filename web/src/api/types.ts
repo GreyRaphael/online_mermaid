@@ -1,6 +1,7 @@
 export interface SessionResponse {
   authenticated: boolean
   username?: string
+  version?: string
 }
 
 export interface DiagramMeta {
