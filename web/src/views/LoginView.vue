@@ -39,7 +39,7 @@ async function submit(): Promise<void> {
       <div class="brand-mark" aria-hidden="true">M</div>
       <p class="eyebrow">ONLINE MERMAID WORKSPACE</p>
       <h1 id="login-title">Online Mermaid</h1>
-      <p class="login-intro">登录后创建、编辑和渲染 Mermaid 流程图与图表。</p>
+      <p class="login-intro">登录后创建、编辑和实时渲染 Mermaid 图表。</p>
 
       <form class="login-form" @submit.prevent="submit">
         <div class="form-group">
@@ -88,13 +88,15 @@ async function submit(): Promise<void> {
   justify-content: center;
   width: 100vw;
   height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
 .login-theme {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
 }
 
 .login-card {
@@ -157,7 +159,7 @@ h1 {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 label {
@@ -168,12 +170,13 @@ label {
 
 input {
   width: 100%;
+  height: 40px;
   padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   transition: border-color 120ms;
 }
 
@@ -197,11 +200,12 @@ input:focus {
   justify-content: center;
   gap: 8px;
   width: 100%;
+  height: 42px;
   padding: 9px;
   background: var(--accent);
   color: #ffffff;
   border-radius: var(--radius-sm);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   margin-top: 6px;
   transition: opacity 120ms;
@@ -234,6 +238,22 @@ input:focus {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  input {
+    font-size: 16px; /* Avoid iOS auto-zoom */
+    height: 44px;
+  }
+
+  .login-button {
+    height: 44px;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { MERMAID_TEMPLATES, type MermaidTemplate } from '@/utils/templates'
 import { iconSvg } from '@/utils/icons'
 
@@ -190,7 +190,8 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
+  padding: 4px 10px;
+  min-height: 28px;
   border-radius: var(--radius-xs);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -210,7 +211,7 @@ defineExpose({
   top: 100%;
   right: 0;
   margin-top: 4px;
-  width: 220px;
+  width: min(85vw, 240px);
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -219,10 +220,11 @@ defineExpose({
   padding: 4px 0;
   max-height: 320px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .menu-header {
-  padding: 6px 12px 4px;
+  padding: 8px 12px 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-faint);
@@ -234,9 +236,10 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 6px 12px;
+  min-height: 38px;
+  padding: 8px 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text);
   transition: background 100ms;
 }
@@ -289,7 +292,7 @@ defineExpose({
   flex: 1;
   width: 100%;
   height: 100%;
-  padding: 12px 14px;
+  padding: 12px 14px max(24px, env(safe-area-inset-bottom)) 14px;
   border: none;
   background: transparent;
   color: var(--text);
@@ -300,10 +303,24 @@ defineExpose({
   outline: none;
   white-space: pre;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   tab-size: 4;
 }
 
 .code-textarea::placeholder {
   color: var(--text-faint);
+}
+
+@media (max-width: 600px) {
+  .line-numbers {
+    width: 36px;
+    padding: 10px 4px;
+    font-size: 12px;
+  }
+
+  .code-textarea {
+    padding: 10px 10px;
+    font-size: 13px;
+  }
 }
 </style>

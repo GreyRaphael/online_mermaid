@@ -7,6 +7,8 @@ const props = defineProps<{
   diagrams: DiagramMeta[]
   activeId: string
   collapsed: boolean
+  isMobile?: boolean
+  mobileOpen?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -16,6 +18,7 @@ const emit = defineEmits<{
   delete: [id: string]
   duplicate: [id: string]
   toggleCollapse: []
+  closeMobile: []
 }>()
 
 const searchQuery = ref('')
@@ -67,6 +70,13 @@ function handleDuplicate(id: string, e: Event) {
   emit('duplicate', id)
 }
 
+function handleItemClick(id: string) {
+  emit('select', id)
+  if (props.isMobile) {
+    emit('closeMobile')
+  }
+}
+
 function formatDate(iso: string): string {
   try {
     const d = new Date(iso)
@@ -84,34 +94,67 @@ function formatDate(iso: string): string {
 </script>
 
 <template>
-  <aside class="sidebar-container" :class="{ collapsed }">
+  <aside
+    class="sidebar-container"
+    :class="{
+      collapsed: !isMobile && collapsed,
+      'mobile-drawer': isMobile,
+      'mobile-open': isMobile && mobileOpen,
+    }"
+    :role="isMobile ? 'dialog' : 'complementary'"
+    :aria-modal="isMobile ? 'true' : undefined"
+    :aria-label="isMobile ? '图表列表' : undefined"
+  >
     <div class="sidebar-header">
-      <div v-if="!collapsed" class="header-title">
+      <div v-if="isMobile || !collapsed" class="header-title">
         <span class="logo-icon" v-html="iconSvg('sparkles', 16)"></span>
         <span class="title-text">图表列表</span>
         <span class="count-badge">{{ diagrams.length }}</span>
       </div>
 
+      <!-- Desktop Collapse Button -->
       <button
+        v-if="!isMobile"
         type="button"
-        class="collapse-toggle-btn"
+        class="icon-btn collapse-toggle-btn"
         :title="collapsed ? '展开侧边栏' : '折叠侧边栏'"
         @click="emit('toggleCollapse')"
       >
-        <span v-html="iconSvg(collapsed ? 'chevron-right' : 'sidebar', 15)"></span>
+        <span v-html="iconSvg(collapsed ? 'chevron-right' : 'sidebar', 16)"></span>
+      </button>
+
+      <!-- Mobile Close Button -->
+      <button
+        v-else
+        type="button"
+        class="icon-btn close-drawer-btn"
+        title="关闭抽屉"
+        aria-label="关闭抽屉"
+        @click="emit('closeMobile')"
+      >
+        <span v-html="iconSvg('minimize', 16)"></span>
       </button>
     </div>
 
-    <div v-if="!collapsed" class="sidebar-content">
+    <div v-if="isMobile || !collapsed" class="sidebar-content">
       <div class="action-row">
-        <button type="button" class="create-btn" @click="emit('create')">
-          <span v-html="iconSvg('plus', 14)"></span>
+        <button
+          type="button"
+          class="create-btn"
+          @click="
+            () => {
+              emit('create')
+              if (isMobile) emit('closeMobile')
+            }
+          "
+        >
+          <span v-html="iconSvg('plus', 15)"></span>
           <span>新建图表</span>
         </button>
       </div>
 
       <div class="search-box">
-        <span class="search-icon" v-html="iconSvg('search', 13)"></span>
+        <span class="search-icon" v-html="iconSvg('search', 14)"></span>
         <input
           v-model="searchQuery"
           type="text"
@@ -137,11 +180,11 @@ function formatDate(iso: string): string {
           class="diagram-item"
           :class="{ active: d.id === activeId }"
           role="listitem"
-          @click="emit('select', d.id)"
+          @click="handleItemClick(d.id)"
           @dblclick="startRename(d)"
         >
           <div class="item-main">
-            <span class="item-icon" v-html="iconSvg('file-code', 14)"></span>
+            <span class="item-icon" v-html="iconSvg('file-code', 15)"></span>
 
             <div v-if="editingId === d.id" class="edit-wrapper" @click.stop>
               <input
@@ -167,7 +210,7 @@ function formatDate(iso: string): string {
               title="重命名"
               @click="startRename(d, $event)"
             >
-              <span v-html="iconSvg('edit', 12)"></span>
+              <span v-html="iconSvg('edit', 14)"></span>
             </button>
             <button
               type="button"
@@ -175,7 +218,7 @@ function formatDate(iso: string): string {
               title="复制图表"
               @click="handleDuplicate(d.id, $event)"
             >
-              <span v-html="iconSvg('duplicate', 12)"></span>
+              <span v-html="iconSvg('duplicate', 14)"></span>
             </button>
             <button
               type="button"
@@ -184,7 +227,7 @@ function formatDate(iso: string): string {
               :disabled="diagrams.length <= 1"
               @click="handleDelete(d.id, d.title, $event)"
             >
-              <span v-html="iconSvg('trash', 12)"></span>
+              <span v-html="iconSvg('trash', 14)"></span>
             </button>
           </div>
         </div>
@@ -206,7 +249,7 @@ function formatDate(iso: string): string {
   height: 100%;
   background: var(--surface-raised);
   border-right: 1px solid var(--border);
-  transition: width 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 180ms cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -252,18 +295,18 @@ function formatDate(iso: string): string {
   font-weight: 500;
 }
 
-.collapse-toggle-btn {
+.icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   transition: all 120ms ease;
 }
 
-.collapse-toggle-btn:hover {
+.icon-btn:hover {
   color: var(--text);
   background: var(--surface-hover);
 }
@@ -287,11 +330,12 @@ function formatDate(iso: string): string {
   justify-content: center;
   gap: 6px;
   width: 100%;
+  min-height: 36px;
   padding: 6px 12px;
   background: var(--accent);
   color: #ffffff;
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   transition: opacity 120ms;
 }
@@ -305,6 +349,7 @@ function formatDate(iso: string): string {
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
+  min-height: 34px;
   background: var(--surface-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -320,30 +365,32 @@ function formatDate(iso: string): string {
   border: none;
   background: transparent;
   outline: none;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text);
 }
 
 .clear-search-btn {
   color: var(--text-faint);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
-  padding: 0 2px;
+  padding: 2px 4px;
 }
 
 .diagram-list {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .diagram-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 8px;
+  padding: 8px 10px;
+  min-height: 42px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 100ms;
@@ -371,7 +418,7 @@ function formatDate(iso: string): string {
 .item-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
   flex: 1;
 }
@@ -387,10 +434,11 @@ function formatDate(iso: string): string {
   flex-direction: column;
   min-width: 0;
   flex: 1;
+  gap: 1px;
 }
 
 .item-title {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -398,7 +446,7 @@ function formatDate(iso: string): string {
 }
 
 .item-date {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
@@ -409,8 +457,8 @@ function formatDate(iso: string): string {
 
 .rename-input {
   width: 100%;
-  padding: 2px 4px;
-  font-size: 12px;
+  padding: 3px 6px;
+  font-size: 13px;
   border: 1px solid var(--accent);
   border-radius: var(--radius-xs);
   background: var(--surface-raised);
@@ -421,8 +469,8 @@ function formatDate(iso: string): string {
 .item-actions {
   display: none;
   align-items: center;
-  gap: 2px;
-  margin-left: 4px;
+  gap: 4px;
+  margin-left: 6px;
 }
 
 .diagram-item:hover .item-actions,
@@ -434,8 +482,8 @@ function formatDate(iso: string): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   transition: all 100ms;
@@ -457,9 +505,49 @@ function formatDate(iso: string): string {
 }
 
 .empty-hint {
-  padding: 24px 8px;
+  padding: 32px 8px;
   text-align: center;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: 13px;
+}
+
+/* Mobile Drawer Styles */
+.sidebar-container.mobile-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  width: min(86vw, 320px);
+  height: 100%;
+  visibility: hidden;
+  box-shadow: var(--shadow-lg);
+  transform: translate3d(-105%, 0, 0);
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+.sidebar-container.mobile-drawer.mobile-open {
+  visibility: visible;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 840px), (pointer: coarse) {
+  .diagram-item {
+    min-height: 48px;
+  }
+
+  .item-actions {
+    display: flex;
+  }
+
+  .item-btn {
+    width: 30px;
+    height: 30px;
+  }
 }
 </style>

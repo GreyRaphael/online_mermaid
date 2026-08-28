@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import panzoom, { type PanZoom } from 'panzoom'
-import { ICON_PATHS, iconSvg } from '@/utils/icons'
+import { iconSvg } from '@/utils/icons'
 import { exportPngImage, exportSvgImage, svgToPngBlob } from '@/utils/export'
 
 const props = defineProps<{
@@ -30,13 +30,13 @@ function resetView() {
     return
   }
 
-  const rectWidth = container.clientWidth || 800
-  const rectHeight = container.clientHeight || 600
+  const rectWidth = container.clientWidth || window.innerWidth
+  const rectHeight = container.clientHeight || window.innerHeight
   const cx = rectWidth / 2
   const cy = rectHeight / 2
 
-  let contentWidth = svg.clientWidth || svg.viewBox.baseVal.width || 600
-  let contentHeight = svg.clientHeight || svg.viewBox.baseVal.height || 400
+  let contentWidth = svg.clientWidth || svg.viewBox?.baseVal?.width || 600
+  let contentHeight = svg.clientHeight || svg.viewBox?.baseVal?.height || 400
 
   if (rotation.value % 180 !== 0) {
     const temp = contentWidth
@@ -167,47 +167,48 @@ onBeforeUnmount(() => {
     <div class="modal-backdrop" @click="emit('close')"></div>
     <div class="modal-window">
       <div class="modal-toolbar">
-        <div class="toolbar-group">
-          <button type="button" class="tool-btn" title="放大" @click="handleZoom('in')">
-            <span v-html="iconSvg('zoom-in', 16)"></span>
-          </button>
-          <button type="button" class="tool-btn" title="缩小" @click="handleZoom('out')">
-            <span v-html="iconSvg('zoom-out', 16)"></span>
-          </button>
-          <button type="button" class="tool-btn" title="重置视角" @click="resetView">
-            <span v-html="iconSvg('rotate-ccw', 16)"></span>
-          </button>
-          <button type="button" class="tool-btn" title="旋转 90°" @click="handleRotate">
-            <span v-html="iconSvg('rotate-cw', 16)"></span>
-          </button>
+        <div class="toolbar-scroll-wrap">
+          <div class="toolbar-group">
+            <button type="button" class="tool-btn" title="放大" @click="handleZoom('in')">
+              <span v-html="iconSvg('zoom-in', 16)"></span>
+            </button>
+            <button type="button" class="tool-btn" title="缩小" @click="handleZoom('out')">
+              <span v-html="iconSvg('zoom-out', 16)"></span>
+            </button>
+            <button type="button" class="tool-btn" title="重置视角" @click="resetView">
+              <span v-html="iconSvg('rotate-ccw', 16)"></span>
+            </button>
+            <button type="button" class="tool-btn" title="旋转 90°" @click="handleRotate">
+              <span v-html="iconSvg('rotate-cw', 16)"></span>
+              <span class="btn-text">旋转</span>
+            </button>
+          </div>
+
+          <div class="toolbar-divider"></div>
+
+          <div class="toolbar-group">
+            <button type="button" class="tool-btn" title="复制 Mermaid 源码" @click="copyMermaidSource">
+              <span v-html="iconSvg('file-code', 16)"></span>
+              <span class="btn-text">源码</span>
+            </button>
+            <button type="button" class="tool-btn" title="复制 PNG (白底)" @click="copyPng">
+              <span v-html="iconSvg('copy', 16)"></span>
+              <span class="btn-text">复制图片</span>
+            </button>
+            <button type="button" class="tool-btn" title="导出透明 PNG" @click="downloadPng">
+              <span v-html="iconSvg('download', 16)"></span>
+              <span class="btn-text">导出 PNG</span>
+            </button>
+            <button type="button" class="tool-btn" title="导出 SVG" @click="downloadSvg">
+              <span v-html="iconSvg('svg', 16)"></span>
+              <span class="btn-text">SVG</span>
+            </button>
+          </div>
         </div>
-
-        <div class="toolbar-divider"></div>
-
-        <div class="toolbar-group">
-          <button type="button" class="tool-btn" title="复制 Mermaid 源码" @click="copyMermaidSource">
-            <span v-html="iconSvg('file-code', 16)"></span>
-            <span class="btn-text">源码</span>
-          </button>
-          <button type="button" class="tool-btn" title="复制 PNG (白底)" @click="copyPng">
-            <span v-html="iconSvg('copy', 16)"></span>
-            <span class="btn-text">复制图片</span>
-          </button>
-          <button type="button" class="tool-btn" title="导出透明 PNG" @click="downloadPng">
-            <span v-html="iconSvg('download', 16)"></span>
-            <span class="btn-text">导出 PNG</span>
-          </button>
-          <button type="button" class="tool-btn" title="导出 SVG" @click="downloadSvg">
-            <span v-html="iconSvg('svg', 16)"></span>
-            <span class="btn-text">SVG</span>
-          </button>
-        </div>
-
-        <div class="spacer"></div>
 
         <button type="button" class="tool-btn close-btn" title="关闭全屏" @click="emit('close')">
           <span v-html="iconSvg('minimize', 16)"></span>
-          <span class="btn-text">退出全屏</span>
+          <span class="btn-text">退出</span>
         </button>
       </div>
 
@@ -266,28 +267,44 @@ onBeforeUnmount(() => {
 .modal-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   background: var(--surface-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  padding-top: max(8px, env(safe-area-inset-top));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+
+.toolbar-scroll-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex: 1;
+}
+
+.toolbar-scroll-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 18px;
   background: var(--border-strong);
-  margin: 0 4px;
-}
-
-.spacer {
-  flex: 1;
+  margin: 0 2px;
+  flex-shrink: 0;
 }
 
 .tool-btn {
@@ -295,6 +312,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
+  min-height: 32px;
   border-radius: var(--radius-sm);
   color: var(--text);
   background: var(--surface);
@@ -302,6 +320,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 500;
   transition: all 120ms ease;
+  flex-shrink: 0;
 }
 
 .tool-btn:hover {
@@ -313,6 +332,8 @@ onBeforeUnmount(() => {
   color: var(--danger);
   border-color: var(--danger-soft);
   background: var(--danger-soft);
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .close-btn:hover {
@@ -331,6 +352,7 @@ onBeforeUnmount(() => {
   background: var(--surface);
   position: relative;
   cursor: grab;
+  touch-action: none;
 }
 
 .modal-canvas:active {
@@ -354,5 +376,24 @@ onBeforeUnmount(() => {
   max-width: none;
   height: auto;
   user-select: none;
+  touch-action: none;
+}
+
+@media (max-width: 840px) {
+  .modal-window {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .tool-btn {
+    min-height: 36px;
+    padding: 6px 8px;
+  }
+
+  .btn-text {
+    display: none;
+  }
 }
 </style>

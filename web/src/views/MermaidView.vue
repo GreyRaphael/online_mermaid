@@ -35,7 +35,7 @@ function getInitialViewMode(): ViewMode {
   } catch {
     // fallback
   }
-  return 'split' // default split mode for great mermaid editing experience
+  return 'split'
 }
 
 const viewMode = ref<ViewMode>(getInitialViewMode())
@@ -47,7 +47,31 @@ watch(viewMode, (mode) => {
   }
 })
 
+// Mobile and Sidebar state
+const mobileViewport = ref(false)
+const mobileSidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
+
+function handleViewportChange() {
+  if (typeof window === 'undefined') return
+  mobileViewport.value = window.matchMedia('(max-width: 840px)').matches
+  if (!mobileViewport.value) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+function toggleSidebar() {
+  if (mobileViewport.value) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+}
+
+function closeSidebar() {
+  mobileSidebarOpen.value = false
+}
+
 const diagrams = ref<DiagramMeta[]>([])
 const currentDiagram = ref<Diagram | null>(null)
 const editableCode = ref('')
@@ -280,6 +304,11 @@ async function handleLogout() {
 
 // Global keybindings
 function handleGlobalKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && mobileSidebarOpen.value) {
+    e.preventDefault()
+    closeSidebar()
+    return
+  }
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault()
     handleSave()
@@ -287,11 +316,14 @@ function handleGlobalKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  handleViewportChange()
+  window.addEventListener('resize', handleViewportChange)
   window.addEventListener('keydown', handleGlobalKeydown)
   await loadDiagramList()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleViewportChange)
   window.removeEventListener('keydown', handleGlobalKeydown)
   if (toastTimer) clearTimeout(toastTimer)
 })
@@ -299,22 +331,46 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="workspace-layout">
+    <!-- Sidebar (Desktop Column or Mobile Drawer) -->
     <Sidebar
       :diagrams="diagrams"
       :active-id="currentDiagram?.id || ''"
       :collapsed="sidebarCollapsed"
+      :is-mobile="mobileViewport"
+      :mobile-open="mobileSidebarOpen"
       @select="selectDiagram"
       @create="handleCreateNew"
       @rename="handleRename"
       @delete="handleDelete"
       @duplicate="handleDuplicate"
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      @close-mobile="closeSidebar"
     />
+
+    <!-- Mobile Drawer Backdrop -->
+    <button
+      v-if="mobileViewport && mobileSidebarOpen"
+      class="drawer-backdrop"
+      type="button"
+      aria-label="关闭侧边栏"
+      @click="closeSidebar"
+    ></button>
 
     <main class="main-workspace">
       <!-- Top Workspace Header -->
       <header class="top-header">
         <div class="header-left">
+          <button
+            type="button"
+            class="icon-btn menu-btn"
+            :aria-expanded="mobileViewport ? mobileSidebarOpen : !sidebarCollapsed"
+            :title="mobileViewport ? '打开图表列表' : (sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏')"
+            aria-label="切换侧栏"
+            @click="toggleSidebar"
+          >
+            <span v-html="iconSvg('menu', 16)"></span>
+          </button>
+
           <div v-if="currentDiagram" class="diagram-title-box">
             <span class="diagram-tag">图表</span>
             <h1 class="diagram-heading" :title="currentDiagram.title">
@@ -333,7 +389,7 @@ onBeforeUnmount(() => {
               title="仅预览图表"
               @click="viewMode = 'preview'"
             >
-              👁 预览
+              👁 <span class="mode-label">预览</span>
             </button>
             <button
               type="button"
@@ -342,16 +398,16 @@ onBeforeUnmount(() => {
               title="仅代码编辑"
               @click="viewMode = 'edit'"
             >
-              ✏️ 编辑
+              ✏️ <span class="mode-label">编辑</span>
             </button>
             <button
               type="button"
               class="mode-btn"
               :class="{ active: viewMode === 'split' }"
-              title="左右分屏实时渲染"
+              title="分屏实时渲染"
               @click="viewMode = 'split'"
             >
-              📑 分屏
+              📑 <span class="mode-label">分屏</span>
             </button>
           </div>
         </div>
@@ -365,7 +421,7 @@ onBeforeUnmount(() => {
             @click="handleSave"
           >
             <span v-html="iconSvg('save', 14)"></span>
-            <span>{{ isSaving ? '保存中…' : '保存' }}</span>
+            <span class="save-btn-text">{{ isSaving ? '保存中…' : '保存' }}</span>
           </button>
 
           <div class="divider"></div>
@@ -383,6 +439,7 @@ onBeforeUnmount(() => {
             type="button"
             class="icon-btn logout-btn"
             title="退出登录"
+            aria-label="退出登录"
             @click="handleLogout"
           >
             <span v-html="iconSvg('logout', 14)"></span>
@@ -394,11 +451,11 @@ onBeforeUnmount(() => {
       <div v-if="draftAvailable" class="draft-banner" role="alert">
         <div class="draft-info">
           <span class="draft-icon">📝</span>
-          <span>检测到本地存在未保存的草稿（保存于 {{ draftSavedAt }}）</span>
+          <span>存在未保存本地草稿（{{ draftSavedAt }}）</span>
         </div>
         <div class="draft-actions">
-          <button type="button" class="draft-btn primary" @click="restoreDraft">恢复草稿</button>
-          <button type="button" class="draft-btn" @click="discardDraft">放弃草稿</button>
+          <button type="button" class="draft-btn primary" @click="restoreDraft">恢复</button>
+          <button type="button" class="draft-btn" @click="discardDraft">放弃</button>
         </div>
       </div>
 
@@ -444,11 +501,35 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .workspace-layout {
+  position: relative;
   display: flex;
   width: 100vw;
   height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: var(--bg);
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  animation: fadeIn 180ms ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .main-workspace {
@@ -465,74 +546,100 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   height: var(--header-height);
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--surface-raised);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  gap: 12px;
+  gap: 8px;
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
 }
 
 .header-left {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-width: 0;
   flex: 1;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.menu-btn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
 }
 
 .diagram-title-box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .diagram-tag {
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 2px 5px;
   background: var(--surface-muted);
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .diagram-heading {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: clamp(100px, 20vw, 240px);
 }
 
 .dirty-indicator {
   font-size: 11px;
   font-weight: 600;
   color: var(--accent-strong);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .header-center {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .view-mode-group {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px;
+  gap: 2px;
+  padding: 2px;
   border-radius: var(--radius-sm);
   background: var(--surface-muted);
   border: 1px solid var(--border);
 }
 
 .mode-btn {
-  padding: 3px 12px;
+  padding: 3px 8px;
   border-radius: var(--radius-xs);
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
   transition: all 120ms ease;
+  white-space: nowrap;
 }
 
 .mode-btn:hover {
@@ -549,7 +656,7 @@ onBeforeUnmount(() => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   justify-content: flex-end;
 }
@@ -557,14 +664,16 @@ onBeforeUnmount(() => {
 .save-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: 5px;
+  padding: 4px 10px;
+  min-height: 28px;
   border-radius: var(--radius-sm);
   background: var(--accent);
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   transition: opacity 120ms;
+  flex-shrink: 0;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -578,17 +687,19 @@ onBeforeUnmount(() => {
 
 .divider {
   width: 1px;
-  height: 18px;
+  height: 16px;
   background: var(--border);
+  flex-shrink: 0;
 }
 
 .user-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 8px 2px 2px;
+  padding: 2px 6px 2px 2px;
   background: var(--surface-muted);
   border-radius: 14px;
+  flex-shrink: 0;
 }
 
 .user-avatar {
@@ -614,11 +725,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   transition: all 120ms;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -634,8 +746,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 6px 16px;
+  gap: 8px;
+  padding: 6px 12px;
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-raised));
   border-bottom: 1px solid var(--border);
   font-size: 12px;
@@ -646,13 +758,18 @@ onBeforeUnmount(() => {
 .draft-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .draft-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .draft-btn {
@@ -681,9 +798,12 @@ onBeforeUnmount(() => {
   flex: 1;
   width: 100%;
   min-height: 0;
-  padding: 12px;
-  gap: 12px;
+  padding: 10px;
+  gap: 10px;
   background: var(--bg);
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
 }
 
 .pane-column {
@@ -702,5 +822,58 @@ onBeforeUnmount(() => {
 .stage-container.mode-split .preview-col {
   flex: 1;
   width: 50%;
+}
+
+/* Mobile Responsive Adaptations */
+@media (max-width: 840px) {
+  .stage-container {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .stage-container.mode-split {
+    flex-direction: column;
+  }
+
+  .stage-container.mode-split .editor-col,
+  .stage-container.mode-split .preview-col {
+    width: 100%;
+    height: 50%;
+  }
+
+  .diagram-heading {
+    max-width: 120px;
+  }
+
+  .username-text {
+    display: none;
+  }
+
+  .user-badge {
+    padding: 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .diagram-tag {
+    display: none;
+  }
+
+  .save-btn {
+    padding: 4px 8px;
+  }
+
+  .save-btn-text {
+    display: none;
+  }
+
+  .mode-label {
+    display: none;
+  }
+
+  .mode-btn {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
 }
 </style>

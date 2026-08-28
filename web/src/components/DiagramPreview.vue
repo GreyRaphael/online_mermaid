@@ -301,9 +301,21 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 6px 10px;
   background: var(--surface-muted);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.preview-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-left {
   flex-shrink: 0;
 }
 
@@ -312,12 +324,14 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .toolbar-actions {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .toolbar-sep {
@@ -331,13 +345,14 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-xs);
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--border);
   transition: all 120ms ease;
+  flex-shrink: 0;
 }
 
 .tool-btn:hover {
@@ -394,6 +409,7 @@ onBeforeUnmount(() => {
   overflow: visible;
   cursor: grab;
   user-select: none;
+  touch-action: none;
 }
 
 .mermaid-output :deep(svg:active) {
@@ -403,12 +419,15 @@ onBeforeUnmount(() => {
 .empty-state {
   color: var(--text-faint);
   font-size: 13px;
+  text-align: center;
+  padding: 16px;
 }
 
 .error-container {
   padding: 16px;
   height: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--surface);
 }
 
@@ -460,5 +479,12 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--text);
   white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .tool-btn {
+    width: 32px;
+    height: 32px;
+  }
 }
 </style>
