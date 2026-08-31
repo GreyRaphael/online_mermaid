@@ -2,7 +2,12 @@
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import panzoom, { type PanZoom } from 'panzoom'
 import { iconSvg } from '@/utils/icons'
-import { exportPngImage, exportSvgImage, svgToPngBlob } from '@/utils/export'
+import {
+  copyPngToClipboard,
+  copyTextToClipboard,
+  exportPngImage,
+  exportSvgImage,
+} from '@/utils/export'
 
 const props = defineProps<{
   svgHtml: string
@@ -15,7 +20,6 @@ const emit = defineEmits<{
   toast: [msg: string, isError?: boolean]
 }>()
 
-const dialogRef = ref<HTMLDialogElement | null>(null)
 const outputRef = ref<HTMLElement | null>(null)
 const rotation = ref(0)
 let pzInstance: PanZoom | null = null
@@ -73,12 +77,19 @@ function handleRotate() {
   })
 }
 
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    emit('close')
+  }
+}
+
 async function copyMermaidSource() {
   if (!props.sourceCode) return
-  try {
-    await navigator.clipboard.writeText(props.sourceCode)
+  const ok = await copyTextToClipboard(props.sourceCode)
+  if (ok) {
     emit('toast', '已复制 Mermaid 源码')
-  } catch {
+  } else {
     emit('toast', '复制源码失败', true)
   }
 }
@@ -86,13 +97,8 @@ async function copyMermaidSource() {
 async function copyPng() {
   const svg = outputRef.value?.querySelector('svg')
   if (!svg) return
-  try {
-    const blob = await svgToPngBlob(svg, { transparent: false })
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    emit('toast', '已复制 PNG 图片 (白底)')
-  } catch {
-    emit('toast', '复制图片受限或失败', true)
-  }
+  const res = await copyPngToClipboard(svg, { transparent: false })
+  emit('toast', res.message, !res.success)
 }
 
 async function downloadPng() {
@@ -127,13 +133,10 @@ function destroyPanzoom() {
 watch(
   () => props.open,
   async (isOpen) => {
-    await nextTick()
-    const dialog = dialogRef.value
-    if (!dialog) return
-
     if (isOpen) {
-      if (!dialog.open) dialog.showModal()
+      window.addEventListener('keydown', handleKeydown)
       rotation.value = 0
+      await nextTick()
       if (outputRef.value) {
         destroyPanzoom()
         pzInstance = panzoom(outputRef.value, {
@@ -144,25 +147,26 @@ watch(
         resetView()
       }
     } else {
+      window.removeEventListener('keydown', handleKeydown)
       destroyPanzoom()
-      if (dialog.open) dialog.close()
     }
   },
   { immediate: true },
 )
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
   destroyPanzoom()
 })
 </script>
 
 <template>
-  <dialog
+  <div
     v-if="open"
-    ref="dialogRef"
     class="fullscreen-dialog"
-    @close="emit('close')"
-    @cancel.prevent="emit('close')"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Mermaid 图表全屏查看"
   >
     <div class="modal-backdrop" @click="emit('close')"></div>
     <div class="modal-window">
@@ -222,7 +226,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-  </dialog>
+  </div>
 </template>
 
 <style scoped>
@@ -235,12 +239,11 @@ onBeforeUnmount(() => {
   max-height: 100vh;
   margin: 0;
   padding: 0;
-  border: none;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 2000;
 }
 
 .modal-backdrop {

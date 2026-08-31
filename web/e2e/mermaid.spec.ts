@@ -162,4 +162,41 @@ test.describe('Online Mermaid E2E', () => {
     await closeBtn.click()
     await expect(dialog).not.toBeVisible()
   })
+
+  test('Copy source and toast visibility in preview and fullscreen modal', async ({ page }) => {
+    await login(page)
+
+    // Wait for diagram
+    const svg = page.locator('.mermaid-output svg')
+    await expect(svg).toBeVisible({ timeout: 15_000 })
+
+    // Copy source from preview toolbar
+    const copySrcBtn = page.getByRole('button', { name: '复制 Mermaid 源码' })
+    await expect(copySrcBtn).toBeVisible()
+    await copySrcBtn.click()
+
+    // Toast should appear
+    const toast = page.locator('.mermaid-toast')
+    await expect(toast).toBeVisible()
+    await expect(toast).toContainText('已复制 Mermaid 源码')
+
+    // Open fullscreen modal
+    const fullscreenBtn = page.getByRole('button', { name: '全屏查看' })
+    await fullscreenBtn.click()
+    const dialog = page.locator('.fullscreen-dialog')
+    await expect(dialog).toBeVisible()
+
+    // Copy source inside fullscreen modal
+    const modalSrcBtn = page.locator('.fullscreen-dialog').getByRole('button', { name: '源码', exact: true })
+    await expect(modalSrcBtn).toBeVisible()
+    await modalSrcBtn.click()
+
+    // Toast should be visible on top of the modal
+    await expect(toast).toBeVisible()
+    await expect(toast).toContainText('已复制 Mermaid 源码')
+
+    // Close modal
+    await page.getByRole('button', { name: '退出' }).click()
+    await expect(dialog).not.toBeVisible()
+  })
 })

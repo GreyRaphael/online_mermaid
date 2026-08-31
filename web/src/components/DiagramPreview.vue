@@ -4,7 +4,12 @@ import DOMPurify from 'dompurify'
 import panzoom, { type PanZoom } from 'panzoom'
 import type { ResolvedTheme } from '@/composables/useTheme'
 import { iconSvg } from '@/utils/icons'
-import { exportPngImage, exportSvgImage, svgToPngBlob } from '@/utils/export'
+import {
+  copyPngToClipboard,
+  copyTextToClipboard,
+  exportPngImage,
+  exportSvgImage,
+} from '@/utils/export'
 
 const props = defineProps<{
   code: string
@@ -163,10 +168,10 @@ watch(
 
 async function copyMermaidSource() {
   if (!props.code) return
-  try {
-    await navigator.clipboard.writeText(props.code)
+  const ok = await copyTextToClipboard(props.code)
+  if (ok) {
     emit('toast', '已复制 Mermaid 源码')
-  } catch {
+  } else {
     emit('toast', '复制源码失败', true)
   }
 }
@@ -174,13 +179,8 @@ async function copyMermaidSource() {
 async function copyPng() {
   const svg = outputRef.value?.querySelector('svg')
   if (!svg) return
-  try {
-    const blob = await svgToPngBlob(svg, { transparent: false })
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    emit('toast', '已复制 PNG 图片 (白底)')
-  } catch {
-    emit('toast', '复制图片受限或失败', true)
-  }
+  const res = await copyPngToClipboard(svg, { transparent: false })
+  emit('toast', res.message, !res.success)
 }
 
 async function downloadPng() {
