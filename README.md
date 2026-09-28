@@ -32,8 +32,9 @@ Online Mermaid 是一个轻量、优雅、全功能包含的**单二进制在线
   - 移动端自动隐藏顶栏冗余文件名，释放宝贵的操作区域；
   - 触控热区全面优化（`>= 44px`），移动端输入框字号 16px 防 iOS 自动缩放。
 - **☀️ 日夜主题无缝切换**：支持浅色模式（Day）、深色夜间模式（Night）与跟随系统（System），图表渲染与编辑器同步响应切换。
-- **🔒 极简安全认证与用户子菜单**：
-  - 顶栏右侧将退出按钮统一收敛至用户下拉子菜单（`.user-dropdown`），展示用户状态与一键退出；
+- **🔒 极简安全认证、在线自更新与用户子菜单**：
+  - 顶栏右侧用户子菜单（`.user-dropdown`）集成「检查更新」与一键退出；
+  - 支持在服务器上一键检测 GitHub 最新发布版本、查看 Release 说明，并支持**单二进制就地原子自更新与自动平滑重启**；
   - 基于 bcrypt 密码哈希与安全的 HttpOnly Cookie session 认证。
 - **💾 本地草稿容灾恢复**：实时检测 LocalStorage 草稿，异常关闭或误刷新后支持一键提示恢复或放弃。
 
@@ -201,6 +202,9 @@ nohup ./online-mermaid --addr 0.0.0.0:8850 > online-mermaid.log 2>&1 &
 | `--password-hash` | `ONLINE_MERMAID_ADMIN_PASSWORD_HASH` | 默认 `admin123` 哈希 | 管理员 bcrypt 密码哈希 |
 | `--session-ttl` | `ONLINE_MERMAID_SESSION_TTL` | `72h` | 登录 Session 有效期 |
 | `--secure-cookie` | `ONLINE_MERMAID_SECURE_COOKIE` | `false` | 启用 HTTPS 部署时请开启该参数 |
+| - | `ONLINE_MERMAID_UPDATE_REPO` | `GreyRaphael/online_mermaid` | 自更新拉取的 GitHub 仓库 |
+| - | `ONLINE_MERMAID_UPDATE_PROXY` | 无 | GitHub API / Release 下载加速代理镜像（如 `https://ghproxy.net/`） |
+| - | `ONLINE_MERMAID_GITHUB_TOKEN` | 无 | GitHub API 访问 Token（可选，提高限频配额） |
 
 ---
 

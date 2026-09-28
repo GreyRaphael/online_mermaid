@@ -46,6 +46,10 @@ func New(cfg Config) *Server {
 	mux.Handle("DELETE /api/diagrams/{id}", cfg.Sessions.Require(deleteDiagramHandler(cfg.DB)))
 	mux.Handle("POST /api/diagrams/{id}/duplicate", cfg.Sessions.Require(duplicateDiagramHandler(cfg.DB)))
 
+	// System update API
+	mux.Handle("GET /api/system/update/check", cfg.Sessions.Require(checkUpdateHandler()))
+	mux.Handle("POST /api/system/update/apply", cfg.Sessions.Require(applyUpdateHandler()))
+
 	// Fallback for unmatched API routes
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "API route not found")

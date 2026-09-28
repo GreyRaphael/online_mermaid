@@ -39,6 +39,14 @@ export const ICON_PATHS: Record<string, string> = {
   'chevron-right': '<polyline points="9 18 15 12 9 6"></polyline>',
   'chevron-left': '<polyline points="15 18 9 12 15 6"></polyline>',
   svg: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><text x="50%" y="16.5" text-anchor="middle" font-size="6" font-family="system-ui, -apple-system, sans-serif" font-weight="900" fill="currentColor" stroke="none">SVG</text>',
+  'refresh-cw':
+    '<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>',
+  'external-link':
+    '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>',
+  'alert-circle':
+    '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
+  'check-circle':
+    '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
 }
 
 export function iconSvg(name: string, size = 16, strokeWidth = 2): string {

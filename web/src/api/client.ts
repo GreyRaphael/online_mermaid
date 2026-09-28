@@ -4,6 +4,8 @@ import type {
   ListDiagramsResponse,
   NextNameResponse,
   SessionResponse,
+  UpdateCheckResponse,
+  UpdateApplyResponse,
 } from './types'
 
 export const AUTH_EXPIRED_EVENT = 'online-mermaid:auth-expired'
@@ -92,5 +94,25 @@ export async function deleteDiagram(id: string): Promise<{ deleted: string }> {
 export async function duplicateDiagram(id: string): Promise<Diagram> {
   return request<Diagram>(`/api/diagrams/${encodeURIComponent(id)}/duplicate`, {
     method: 'POST',
+  })
+}
+
+export async function checkSystemUpdate(refresh = false): Promise<UpdateCheckResponse> {
+  const query = refresh ? '?refresh=true' : ''
+  return request<UpdateCheckResponse>(`/api/system/update/check${query}`, {
+    method: 'GET',
+  })
+}
+
+export async function applySystemUpdate(
+  downloadUrl?: string,
+  sha256Url?: string
+): Promise<UpdateApplyResponse> {
+  return request<UpdateApplyResponse>('/api/system/update/apply', {
+    method: 'POST',
+    body: JSON.stringify({
+      download_url: downloadUrl,
+      sha256_url: sha256Url,
+    }),
   })
 }

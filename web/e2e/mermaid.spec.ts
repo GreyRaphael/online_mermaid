@@ -199,4 +199,27 @@ test.describe('Online Mermaid E2E', () => {
     await page.getByRole('button', { name: '退出' }).click()
     await expect(dialog).not.toBeVisible()
   })
+
+  test('User menu contains Check Update button and opens UpdateModal', async ({ page }) => {
+    await login(page)
+
+    // Open user menu
+    const userTrigger = page.locator('.user-menu-trigger')
+    await expect(userTrigger).toBeVisible()
+    await userTrigger.click()
+
+    // Verify Check Update button exists
+    const updateBtn = page.getByRole('menuitem', { name: '检查更新' })
+    await expect(updateBtn).toBeVisible()
+    await updateBtn.click()
+
+    // Update modal dialog should be visible
+    const updateModal = page.locator('.modal-card')
+    await expect(updateModal).toBeVisible()
+    await expect(updateModal.locator('.header-title')).toHaveText('系统更新')
+
+    // Close button works
+    await updateModal.locator('.close-btn').click()
+    await expect(updateModal).not.toBeVisible()
+  })
 })

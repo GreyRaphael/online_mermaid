@@ -19,6 +19,7 @@ import DiagramPreview from '@/components/DiagramPreview.vue'
 import FullscreenModal from '@/components/FullscreenModal.vue'
 import ThemeControl from '@/components/ThemeControl.vue'
 import Toast from '@/components/Toast.vue'
+import UpdateModal from '@/components/UpdateModal.vue'
 
 type ViewMode = 'preview' | 'edit' | 'split'
 
@@ -55,6 +56,7 @@ const mobileViewport = ref(false)
 const mobileSidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
 const userMenuOpen = ref(false)
+const updateModalOpen = ref(false)
 const signingOut = ref(false)
 
 function handleViewportChange() {
@@ -304,6 +306,11 @@ async function handleSave() {
   }
 }
 
+function handleOpenUpdate() {
+  userMenuOpen.value = false
+  updateModalOpen.value = true
+}
+
 async function handleLogout() {
   if (signingOut.value) return
   signingOut.value = true
@@ -492,6 +499,18 @@ onBeforeUnmount(() => {
                 <div class="dropdown-divider"></div>
 
                 <button
+                  class="dropdown-item"
+                  type="button"
+                  role="menuitem"
+                  @click="handleOpenUpdate"
+                >
+                  <span v-html="iconSvg('refresh-cw', 15)"></span>
+                  <span>检查更新</span>
+                </button>
+
+                <div class="dropdown-divider"></div>
+
+                <button
                   class="dropdown-item danger"
                   type="button"
                   role="menuitem"
@@ -545,6 +564,14 @@ onBeforeUnmount(() => {
       :svg-html="fullscreenSvg"
       :source-code="fullscreenSource"
       @close="handleCloseFullscreen"
+      @toast="showToast"
+    />
+
+    <!-- System Update Modal -->
+    <UpdateModal
+      :open="updateModalOpen"
+      :current-version="version"
+      @close="updateModalOpen = false"
       @toast="showToast"
     />
 
