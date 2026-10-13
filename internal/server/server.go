@@ -7,21 +7,20 @@ import (
 	"time"
 
 	"online_mermaid/internal/auth"
-	"online_mermaid/internal/config"
 	"online_mermaid/internal/db"
 )
 
 type Server struct {
-	config Config
-	http   *http.Server
+	http *http.Server
 }
 
 type Config struct {
-	AppConfig config.Config
-	Auth      *auth.Handler
-	Sessions  *auth.Store
-	DB        *db.DB
-	Assets    fs.FS
+	Addr         string
+	SecureCookie bool
+	Auth         *auth.Handler
+	Sessions     *auth.Store
+	DB           *db.DB
+	Assets       fs.FS
 }
 
 func New(cfg Config) *Server {
@@ -57,15 +56,16 @@ func New(cfg Config) *Server {
 	// Frontend SPA handler
 	mux.Handle("/", spaHandler(cfg.Assets))
 
-	handler := securityHeaders(recoverPanic(requestLogger(mux)))
-	if cfg.AppConfig.SecureCookie {
-		handler = securityHeadersWithHSTS(recoverPanic(requestLogger(mux)))
+	handler := recoverPanic(requestLogger(mux))
+	if cfg.SecureCookie {
+		handler = securityHeadersWithHSTS(handler)
+	} else {
+		handler = securityHeaders(handler)
 	}
 
 	return &Server{
-		config: cfg,
 		http: &http.Server{
-			Addr:              cfg.AppConfig.Addr,
+			Addr:              cfg.Addr,
 			Handler:           handler,
 			ReadHeaderTimeout: 10 * time.Second,
 			ReadTimeout:       30 * time.Second,

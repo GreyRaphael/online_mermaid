@@ -50,7 +50,13 @@ func (l *LoginLimiter) Allow(r *http.Request) bool {
 			valid = append(valid, t)
 		}
 	}
-	l.failures[ip] = valid
+	// Drop the map entry entirely once no failures remain in the window, so
+	// the map cannot grow without bound across many distinct client IPs.
+	if len(valid) == 0 {
+		delete(l.failures, ip)
+	} else {
+		l.failures[ip] = valid
+	}
 
 	return len(valid) < l.maxAttempts
 }

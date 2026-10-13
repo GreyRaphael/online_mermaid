@@ -46,6 +46,9 @@ type Config struct {
 	PasswordHash []byte
 	SessionTTL   time.Duration
 	SecureCookie bool
+	// UsingDefaultPassword is true when no password hash was configured and
+	// the built-in default ("admin123") is in effect.
+	UsingDefaultPassword bool
 }
 
 var ErrVersionRequested = errors.New("version requested")
@@ -87,6 +90,7 @@ func Parse(args []string) (Config, error) {
 			return Config{}, fmt.Errorf("generate default password hash: %w", err)
 		}
 		passwordHash = string(defaultHash)
+		cfg.UsingDefaultPassword = true
 	}
 
 	if _, err := bcrypt.Cost([]byte(passwordHash)); err != nil {
@@ -103,10 +107,9 @@ func Parse(args []string) (Config, error) {
 	if cfg.DBPath == "" {
 		cfg.DBPath = defaultDBPath()
 	}
-	if err := os.MkdirAll(filepath.Dir(cfg.DBPath), 0755); err != nil {
-		return Config{}, fmt.Errorf("create database directory: %w", err)
-	}
 
+	// Note: the database directory is created lazily by db.Open, keeping
+	// Parse free of filesystem side effects.
 	return cfg, nil
 }
 

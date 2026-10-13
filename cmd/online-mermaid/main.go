@@ -27,7 +27,7 @@ import (
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-		case "version", "-v", "--v", "-version", "--version":
+		case "version":
 			fmt.Println(config.FormattedVersion())
 			return
 		case "hash-password":
@@ -55,6 +55,9 @@ func runServer(args []string) error {
 	if err != nil {
 		return err
 	}
+	if cfg.UsingDefaultPassword {
+		slog.Warn("no admin password hash configured; using default password 'admin123' — set ONLINE_MERMAID_ADMIN_PASSWORD_HASH or --password-hash to change it")
+	}
 
 	database, err := db.Open(cfg.DBPath)
 	if err != nil {
@@ -75,11 +78,12 @@ func runServer(args []string) error {
 	authHandler := auth.NewHandler(cfg.Username, cfg.PasswordHash, sessions, auth.NewLoginLimiter(10, time.Minute))
 
 	app := server.New(server.Config{
-		AppConfig: cfg,
-		Auth:      authHandler,
-		Sessions:  sessions,
-		DB:        database,
-		Assets:    assets,
+		Addr:         cfg.Addr,
+		SecureCookie: cfg.SecureCookie,
+		Auth:         authHandler,
+		Sessions:     sessions,
+		DB:           database,
+		Assets:       assets,
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

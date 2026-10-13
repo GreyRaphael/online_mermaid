@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import panzoom, { type PanZoom } from 'panzoom'
+import { useDiagramActions } from '@/composables/useDiagramActions'
 import { iconSvg } from '@/utils/icons'
-import {
-  copyPngToClipboard,
-  copyTextToClipboard,
-  exportPngImage,
-  exportSvgImage,
-} from '@/utils/export'
 
 const props = defineProps<{
   svgHtml: string
@@ -84,44 +79,12 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-async function copyMermaidSource() {
-  if (!props.sourceCode) return
-  const ok = await copyTextToClipboard(props.sourceCode)
-  if (ok) {
-    emit('toast', '已复制 Mermaid 源码')
-  } else {
-    emit('toast', '复制源码失败', true)
-  }
-}
-
-async function copyPng() {
-  const svg = outputRef.value?.querySelector('svg')
-  if (!svg) return
-  const res = await copyPngToClipboard(svg, { transparent: false })
-  emit('toast', res.message, !res.success)
-}
-
-async function downloadPng() {
-  const svg = outputRef.value?.querySelector('svg')
-  if (!svg) return
-  try {
-    await exportPngImage(svg, 'mermaid-diagram.png', { transparent: true })
-    emit('toast', '已下载透明 PNG 图片')
-  } catch {
-    emit('toast', '导出 PNG 失败', true)
-  }
-}
-
-function downloadSvg() {
-  const svg = outputRef.value?.querySelector('svg')
-  if (!svg) return
-  try {
-    exportSvgImage(svg, 'mermaid-diagram.svg')
-    emit('toast', '已下载 SVG 矢量图')
-  } catch {
-    emit('toast', '导出 SVG 失败', true)
-  }
-}
+const actions = useDiagramActions((msg, isError) => emit('toast', msg, isError))
+const renderedSvgEl = () => outputRef.value?.querySelector('svg')
+const copyMermaidSource = () => actions.copySource(props.sourceCode)
+const copyPng = () => actions.copyPng(renderedSvgEl())
+const downloadPng = () => actions.downloadPng(renderedSvgEl())
+const downloadSvg = () => actions.downloadSvg(renderedSvgEl())
 
 function destroyPanzoom() {
   if (pzInstance) {

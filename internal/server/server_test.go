@@ -15,7 +15,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"online_mermaid/internal/auth"
-	"online_mermaid/internal/config"
 	"online_mermaid/internal/db"
 	"online_mermaid/internal/server"
 	"online_mermaid/internal/webui"
@@ -40,13 +39,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, *db.DB, func()) {
 
 	assets, _ := webui.Dist()
 	srv := server.New(server.Config{
-		AppConfig: config.Config{
-			Addr:         "127.0.0.1:0",
-			DBPath:       dbPath,
-			Username:     "admin",
-			PasswordHash: hash,
-			SessionTTL:   time.Hour,
-		},
+		Addr:     "127.0.0.1:0",
 		Auth:     authHandler,
 		Sessions: sessions,
 		DB:       database,

@@ -20,7 +20,7 @@ const status = ref<Status>('idle')
 const updateInfo = ref<UpdateCheckResponse | null>(null)
 const errorMsg = ref('')
 const copySuccess = ref(false)
-const restartCountdown = ref(15)
+const restartCountdown = ref(30)
 let pollTimer: number | null = null
 
 async function doCheck(refresh = false) {
@@ -57,15 +57,15 @@ async function handleApplyUpdate() {
 }
 
 function startPollingServer() {
-  restartCountdown.value = 15
+  const pollIntervalSec = 1.5
+  restartCountdown.value = 30
   let attempts = 0
   const maxAttempts = 20
 
   pollTimer = window.setInterval(async () => {
     attempts++
-    if (restartCountdown.value > 1) {
-      restartCountdown.value--
-    }
+    // Count down in real seconds: each tick fires every pollIntervalSec.
+    restartCountdown.value = Math.max(0, 30 - attempts * pollIntervalSec)
 
     try {
       const resp = await fetch('/api/auth/session', { credentials: 'same-origin' })
@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
             <h3 class="state-heading">更新成功，服务正在重启</h3>
             <p class="state-subtext">已完成二进制文件原子替换，正在等待新服务恢复上线…</p>
             <div class="reboot-indicator">
-              <span>状态探测中 ({{ restartCountdown }}s)</span>
+              <span>状态探测中 ({{ Math.ceil(restartCountdown) }}s)</span>
             </div>
           </div>
 
