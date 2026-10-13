@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/term"
 
 	"online_mermaid/internal/auth"
 	"online_mermaid/internal/config"
@@ -115,15 +116,28 @@ func runServer(args []string) error {
 }
 
 func hashPassword(input io.Reader, output io.Writer) error {
-	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, 1024), 64<<10)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return err
+	var password string
+	if file, ok := input.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
+		// Interactive terminal: disable echo so the password is not displayed
+		// or captured by terminal logs / screen-sharing tools.
+		raw, err := term.ReadPassword(int(file.Fd()))
+		fmt.Fprintln(os.Stderr) // newline after hidden input
+		if err != nil {
+			return fmt.Errorf("read password: %w", err)
 		}
-		return errors.New("no password provided")
+		password = string(raw)
+	} else {
+		// Piped / redirected input (e.g. echo 'pw' | online-mermaid hash-password)
+		scanner := bufio.NewScanner(input)
+		scanner.Buffer(make([]byte, 1024), 64<<10)
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				return err
+			}
+			return errors.New("no password provided")
+		}
+		password = strings.TrimSuffix(scanner.Text(), "\r")
 	}
-	password := strings.TrimSuffix(scanner.Text(), "\r")
 	if password == "" {
 		return errors.New("password cannot be empty")
 	}

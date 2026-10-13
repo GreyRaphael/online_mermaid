@@ -271,22 +271,16 @@ func ApplyUpdate(ctx context.Context, downloadURL, sha256URL, proxy string) erro
 
 	client := &http.Client{Timeout: 5 * time.Minute}
 
-	// 1. Download SHA256 checksum if provided
+	// 1. Download SHA256 checksum if provided.
+	// Fail closed: when a checksum URL is given but cannot be fetched or parsed,
+	// abort the update instead of silently skipping integrity verification.
 	var expectedSHA256 string
 	if resolvedSha256URL != "" {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, resolvedSha256URL, nil)
-		if err == nil {
-			req.Header.Set("User-Agent", defaultUserAgent)
-			resp, err := client.Do(req)
-			if err == nil && resp.StatusCode == http.StatusOK {
-				data, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-				resp.Body.Close()
-				parts := strings.Fields(string(data))
-				if len(parts) > 0 && len(parts[0]) == 64 {
-					expectedSHA256 = strings.ToLower(parts[0])
-				}
-			}
+		sum, err := fetchSHA256(ctx, client, resolvedSha256URL)
+		if err != nil {
+			return fmt.Errorf("fetch SHA256 checksum: %w", err)
 		}
+		expectedSHA256 = sum
 	}
 
 	// 2. Download Archive to temporary file
@@ -431,6 +425,36 @@ func extractFromZip(archivePath string, out io.Writer) error {
 		}
 	}
 	return errors.New("online-mermaid binary not found in zip archive")
+}
+
+// fetchSHA256 downloads a "<hex>  <filename>" checksum file and returns the
+// lowercase hex digest. The response body is always closed.
+func fetchSHA256(ctx context.Context, client *http.Client, url string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("create checksum request: %w", err)
+	}
+	req.Header.Set("User-Agent", defaultUserAgent)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("checksum endpoint returned status %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	if err != nil {
+		return "", fmt.Errorf("read checksum body: %w", err)
+	}
+	parts := strings.Fields(string(data))
+	if len(parts) == 0 || len(parts[0]) != 64 {
+		return "", fmt.Errorf("malformed checksum payload %q", strings.TrimSpace(string(data)))
+	}
+	return strings.ToLower(parts[0]), nil
 }
 
 func resolveProxyURL(rawURL, proxy string) string {
