@@ -1,13 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
-
-async function login(page: Page) {
-  await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Online Mermaid' })).toBeVisible()
-  await page.getByLabel('用户名').fill('admin')
-  await page.getByLabel('密码').fill('admin123')
-  await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page.getByRole('button', { name: '切换侧栏' })).toBeVisible()
-}
+import { expect, test } from '@playwright/test'
+import { login } from './helpers'
 
 test.describe('Online Mermaid E2E', () => {
   test('Login, renders mermaid flowchart with node text, and logout via user submenu', async ({

@@ -1,94 +1,88 @@
 import { expect, test } from '@playwright/test'
+import { login } from './helpers'
 
+// Sanitized generic topology: tall multi-layer diagram with nested subgraphs,
+// used to assert that large diagrams render fully within the container bounds.
 const testMermaidCode = `flowchart TD
-    %% 1. 客户端层
-    subgraph ClientLayer["1. 客户端接入层 (Client & Ingress)"]
-        Client["开发者终端 / IDE / OpenCode / Cursor / 量化脚本"]
-        WinLocal["本地代理 (Win10 / WSL 桥接)<br/>172.19.112.1:4001"]
-        aTrust["aTrust 零信任虚拟专网隧道"]
-        Client --> WinLocal
-        WinLocal --> aTrust
+    %% 1. 接入层
+    subgraph AccessLayer["1. 用户接入层 (Access)"]
+        Client["Web 浏览器 / 移动客户端"]
+        CDN["CDN 静态加速节点"]
+        WAF["Web 应用防火墙 (WAF)"]
+        Client --> CDN
+        CDN --> WAF
     end
 
-    %% 2. LiteLLM 统一管控层
-    subgraph GatewayLayer["2. 统一管控网关层 (LiteLLM Gateway)"]
-        LiteLLM["LiteLLM Proxy 网关 (v1.92.0)<br/>mcphub-test.csc.com.cn:4000<br/>• 负责 APIKey 鉴权 (如 衍生品交易部 5000元 配额)<br/>• 模型名别名重写 & 敏感数据审计拦截"]
-        DB[("PostgreSQL 数据库<br/>(密钥/团队/计费/策略)")]
-        LiteLLM <--> DB
+    %% 2. 网关层
+    subgraph GatewayLayer["2. 统一网关层 (Gateway)"]
+        Gateway["API 网关<br/>• 鉴权与限流<br/>• 协议转换与路由"]
+        AuthSvc["认证中心<br/>(Token / OAuth2)"]
+        Gateway <--> AuthSvc
     end
 
-    %% 3. 致胜中转与本地大算力池
-    subgraph ZhiShengCluster["3. 致胜 AI 综合网关 & 本地推理算力池 (10.237.103.82)"]
+    %% 3. 业务服务层
+    subgraph ServiceLayer["3. 业务服务集群 (Services)"]
         direction TB
-        Nginx18889["致胜中转网关 (10.237.103.82:18889)<br/>Nginx 1.20.1 + Java 网关 (/ai/llm/chat)<br/>🟢 零信任内网完全免密直连 / 支持流式与思考链"]
+        OrderSvc["订单服务"]
+        UserSvc["用户服务"]
+        PaySvc["支付服务"]
 
-        subgraph LocalGPU["致胜本地 GPU 实例池 (owned_by: local)"]
-            M_235B["🔥 Qwen3-235B-A22B-Instruct-2507-zxjt (235B MoE 旗舰)"]
-            M_72B["🌟 Qwen72 (72B 密集大模型)"]
-            M_70B["🌟 deepseek-70b (70B 推理模型)"]
-            M_V31["deepseek-v3.1-zxjt (V3.1 内部版)"]
-            M_Qwen32["qwen3-32b-zxjt / qwq-32b-zxjt"]
-            M_Flash_ZXJT["deepseek-v4-flash-zxjt"]
+        subgraph InfraPool["基础组件池"]
+            Cache["分布式缓存"]
+            MQ["消息队列"]
+            Search["检索引擎"]
         end
-        Nginx18889 --> LocalGPU
+        OrderSvc --> InfraPool
     end
 
-    %% 4. AIOps 容器与底层算力集群
-    subgraph AIOpsCluster["4. AIOps 容器平台 & 物理推理节点 (10.48.104.17)"]
+    %% 4. 数据层
+    subgraph DataLayer["4. 数据存储层 (Storage)"]
         direction TB
-        AIOps_K8s["AIOps K8s 生产网关 (端口 32550)<br/>• 强制 APIKey 鉴权<br/>• 挂载 DeepSeek-V3 671B & DS-V4-Flash"]
-
-        subgraph DualReplicas["Flash 双活物理容器副本 (512K 上下文)"]
-            Node_8443["8443 端口实例 (vLLM)<br/>max_model_len: 524288"]
-            Node_8444["8444 端口实例 (vLLM)<br/>max_model_len: 524288"]
-        end
+        PrimaryDB[("主数据库 (读写)")]
+        ReplicaDB[("只读副本库")]
+        PrimaryDB --> ReplicaDB
     end
 
-    %% 5. 云端算力
-    subgraph CloudLayer["5. 云端采购与外部中继"]
-        AliBailian["阿里云百炼平台 (Bailian)<br/>• GLM-5.2 (1M 上下文)"]
-        SiliconFlow["硅基流动 API (api.siliconflow.cn)<br/>• ❌ 已在网关被 Blocked 停用"]
+    %% 5. 可观测层
+    subgraph ObserveLayer["5. 可观测性 (Observability)"]
+        Metrics["指标监控 (Prometheus)"]
+        Logs["日志采集 (Loki)"]
+        Tracing["链路追踪 (Tempo)"]
     end
 
-    %% 链路关系连线
-    %% 途径 A: 走 LiteLLM 统一调度
-    aTrust -->|"【途径 A】标准调度 (带 Key 鉴权)"| LiteLLM
-    LiteLLM -->|"① glm-5.2 / deepseek-v4-pro / qwen3.8-27b"| Nginx18889
-    LiteLLM -->|"② deepseek-v4-flash-0731 (重写为 zxjt)"| Nginx18889
-    LiteLLM -->|"③ deepseek-v3-0324 (带集团 Token)"| AIOps_K8s
+    %% 主链路
+    WAF -->|"HTTPS 转发"| Gateway
+    Gateway -->|"路由 /orders"| OrderSvc
+    Gateway -->|"路由 /users"| UserSvc
+    Gateway -->|"路由 /payments"| PaySvc
 
-    %% 途径 B: 直连致胜网关
-    aTrust -.->|"【途径 B】免密直连 (白嫖算力/无配额限制)"| Nginx18889
+    %% 数据访问
+    OrderSvc --> PrimaryDB
+    UserSvc --> PrimaryDB
+    PaySvc --> MQ
 
-    %% 途径 C: 直连底层的 8443/8444
-    aTrust -.->|"【途径 C】直连双活底层节点 (512K)"| DualReplicas
-
-    %% 18889 向上游与底层连接
-    Nginx18889 -->|"百炼中继通道"| AliBailian
-    Nginx18889 -.->|"底层 Upstream 负载分流"| DualReplicas
+    %% 旁路上报
+    Gateway -.->|"访问日志"| Logs
+    OrderSvc -.->|"指标埋点"| Metrics
+    PaySvc -.->|"调用链 Span"| Tracing
 
     %% 样式定义
-    style ClientLayer fill:#f8f9fa,stroke:#495057,stroke-width:1px
+    style AccessLayer fill:#f8f9fa,stroke:#495057,stroke-width:1px
     style GatewayLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    style ZhiShengCluster fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style AIOpsCluster fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style CloudLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style ServiceLayer fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style DataLayer fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style ObserveLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 
-    style LiteLLM fill:#1976d2,color:#fff
-    style Nginx18889 fill:#2e7d32,color:#fff
-    style AIOps_K8s fill:#e65100,color:#fff
-    style M_235B fill:#ffeb3b,stroke:#fbc02d,color:#000
-    style AliBailian fill:#ab47bc,color:#fff
-    style SiliconFlow fill:#e0e0e0,color:#9e9e9e,stroke-dasharray: 5 5`
+    style Gateway fill:#1976d2,color:#fff
+    style OrderSvc fill:#2e7d32,color:#fff
+    style PrimaryDB fill:#e65100,color:#fff
+    style Cache fill:#ffeb3b,stroke:#fbc02d,color:#000
+    style Metrics fill:#ab47bc,color:#fff`
 
 test('Verify diagram renders fully within container bounds in Preview mode', async ({
   page,
 }) => {
-  await page.goto('/')
-  await page.getByLabel('用户名').fill('admin')
-  await page.getByLabel('密码').fill('admin123')
-  await page.getByRole('button', { name: '登录' }).click()
-  await expect(page.getByRole('button', { name: '切换侧栏' })).toBeVisible()
+  await login(page)
 
   // Switch to Edit mode and paste code
   await page.getByRole('button', { name: '编辑' }).click()
@@ -140,18 +134,14 @@ test('Verify diagram renders fully within container bounds in Preview mode', asy
   expect(previewMetrics.overflowRight).toBe(false)
 
   // Ensure top node and bottom node are visible in viewport
-  await expect(page.locator('.mermaid-output')).toContainText('客户端接入层')
-  await expect(page.locator('.mermaid-output')).toContainText('云端采购与外部中继')
+  await expect(page.locator('.mermaid-output')).toContainText('用户接入层')
+  await expect(page.locator('.mermaid-output')).toContainText('可观测性')
 })
 
 test('Verify diagram renders fully within container bounds in Split mode', async ({
   page,
 }) => {
-  await page.goto('/')
-  await page.getByLabel('用户名').fill('admin')
-  await page.getByLabel('密码').fill('admin123')
-  await page.getByRole('button', { name: '登录' }).click()
-  await expect(page.getByRole('button', { name: '切换侧栏' })).toBeVisible()
+  await login(page)
 
   // Switch to Split mode
   await page.getByRole('button', { name: '分屏' }).click()
