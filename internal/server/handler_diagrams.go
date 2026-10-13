@@ -19,17 +19,6 @@ func listDiagramsHandler(database *db.DB) http.HandlerFunc {
 	}
 }
 
-func getNextNameHandler(database *db.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		name, err := database.GetNextDefaultTitle(r.Context())
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "database_error", err.Error())
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]string{"name": name})
-	}
-}
-
 type createDiagramRequest struct {
 	Title string `json:"title"`
 	Code  string `json:"code"`

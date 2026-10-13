@@ -39,7 +39,6 @@ func New(cfg Config) *Server {
 
 	// Diagram management API
 	mux.Handle("GET /api/diagrams", cfg.Sessions.Require(listDiagramsHandler(cfg.DB)))
-	mux.Handle("GET /api/diagrams/next-name", cfg.Sessions.Require(getNextNameHandler(cfg.DB)))
 	mux.Handle("POST /api/diagrams", cfg.Sessions.Require(createDiagramHandler(cfg.DB)))
 	mux.Handle("GET /api/diagrams/{id}", cfg.Sessions.Require(getDiagramHandler(cfg.DB)))
 	mux.Handle("PUT /api/diagrams/{id}", cfg.Sessions.Require(updateDiagramHandler(cfg.DB)))

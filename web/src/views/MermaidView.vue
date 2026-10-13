@@ -6,7 +6,6 @@ import {
   duplicateDiagram,
   fetchDiagram,
   fetchDiagrams,
-  fetchNextName,
   logout,
   updateDiagram,
 } from '@/api/client'
@@ -229,8 +228,9 @@ async function selectDiagram(id: string) {
 
 async function handleCreateNew() {
   try {
-    const nextName = await fetchNextName()
-    const d = await createDiagram(nextName, '')
+    // Empty title lets the backend assign the next auto-incremented "graphN"
+    // name, saving a separate next-name round trip.
+    const d = await createDiagram('', '')
     await loadDiagramList(d.id)
     showToast(`已创建新图表: ${d.title}`)
   } catch (err: any) {

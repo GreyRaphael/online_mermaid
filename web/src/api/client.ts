@@ -2,7 +2,6 @@ import type {
   Diagram,
   DiagramMeta,
   ListDiagramsResponse,
-  NextNameResponse,
   SessionResponse,
   UpdateCheckResponse,
   UpdateApplyResponse,
@@ -60,11 +59,6 @@ export async function getSession(): Promise<SessionResponse> {
 export async function fetchDiagrams(): Promise<DiagramMeta[]> {
   const data = await request<ListDiagramsResponse>('/api/diagrams', { method: 'GET' })
   return data.items || []
-}
-
-export async function fetchNextName(): Promise<string> {
-  const data = await request<NextNameResponse>('/api/diagrams/next-name', { method: 'GET' })
-  return data.name || 'graph1'
 }
 
 export async function fetchDiagram(id: string): Promise<Diagram> {

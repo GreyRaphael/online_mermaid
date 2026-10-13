@@ -61,6 +61,7 @@ type CheckResult struct {
 var (
 	cacheMu       sync.Mutex
 	cachedResult  *CheckResult
+	cachedKey     string
 	cachedAt      time.Time
 	cacheDuration = 60 * time.Second
 )
@@ -138,25 +139,25 @@ func FindAsset(assets []Asset, targetOS, targetArch, tagName string) (*Asset, *A
 
 // CheckUpdate checks GitHub for the latest release.
 func CheckUpdate(ctx context.Context, currentVersion, repo, proxy string, forceRefresh bool) (*CheckResult, error) {
+	if repo == "" {
+		repo = DefaultRepo
+	}
+
+	// The cache is only valid for the exact same (repo, proxy, version) input;
+	// a configuration change must not be served a stale result.
+	cacheKey := repo + "\x00" + proxy + "\x00" + currentVersion
 	cacheMu.Lock()
-	if !forceRefresh && cachedResult != nil && time.Since(cachedAt) < cacheDuration {
+	if !forceRefresh && cachedResult != nil && cachedKey == cacheKey && time.Since(cachedAt) < cacheDuration {
 		res := *cachedResult
 		cacheMu.Unlock()
 		return &res, nil
 	}
 	cacheMu.Unlock()
 
-	if repo == "" {
-		repo = DefaultRepo
-	}
-
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
-	if proxy != "" {
-		proxy = strings.TrimRight(proxy, "/")
-		if strings.Contains(proxy, "%s") {
-			apiURL = fmt.Sprintf(proxy, apiURL)
-		}
-	}
+	// Route the API request through the proxy the same way asset downloads are
+	// (resolveProxyURL supports both "%s" templates and plain prefix proxies).
+	apiURL = resolveProxyURL(apiURL, proxy)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
@@ -243,6 +244,7 @@ func CheckUpdate(ctx context.Context, currentVersion, repo, proxy string, forceR
 
 	cacheMu.Lock()
 	cachedResult = result
+	cachedKey = cacheKey
 	cachedAt = time.Now()
 	cacheMu.Unlock()
 

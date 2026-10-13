@@ -9,7 +9,6 @@ export interface DiagramMeta {
   title: string
   createdAt: string
   updatedAt: string
-  sortOrder: number
 }
 
 export interface Diagram extends DiagramMeta {
@@ -18,10 +17,6 @@ export interface Diagram extends DiagramMeta {
 
 export interface ListDiagramsResponse {
   items: DiagramMeta[]
-}
-
-export interface NextNameResponse {
-  name: string
 }
 
 export interface ApiError {

@@ -19,7 +19,6 @@ type Diagram struct {
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	SortOrder int       `json:"sortOrder"`
 }
 
 type DiagramMeta struct {
@@ -27,7 +26,6 @@ type DiagramMeta struct {
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	SortOrder int       `json:"sortOrder"`
 }
 
 var (
@@ -75,8 +73,8 @@ func (db *DB) EnsureDefaultDiagram(ctx context.Context) error {
 	if count == 0 {
 		now := time.Now().UTC()
 		_, err := db.ExecContext(ctx,
-			"INSERT INTO diagrams (id, title, code, created_at, updated_at, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-			generateID(), "graph1", defaultSampleCode, now, now, 0,
+			"INSERT INTO diagrams (id, title, code, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+			generateID(), "graph1", defaultSampleCode, now, now,
 		)
 		return err
 	}
@@ -84,7 +82,7 @@ func (db *DB) EnsureDefaultDiagram(ctx context.Context) error {
 }
 
 func (db *DB) ListDiagrams(ctx context.Context) ([]DiagramMeta, error) {
-	rows, err := db.QueryContext(ctx, "SELECT id, title, created_at, updated_at, sort_order FROM diagrams ORDER BY updated_at DESC")
+	rows, err := db.QueryContext(ctx, "SELECT id, title, created_at, updated_at FROM diagrams ORDER BY updated_at DESC")
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +91,7 @@ func (db *DB) ListDiagrams(ctx context.Context) ([]DiagramMeta, error) {
 	var list []DiagramMeta
 	for rows.Next() {
 		var item DiagramMeta
-		if err := rows.Scan(&item.ID, &item.Title, &item.CreatedAt, &item.UpdatedAt, &item.SortOrder); err != nil {
+		if err := rows.Scan(&item.ID, &item.Title, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, item)
@@ -110,9 +108,9 @@ func (db *DB) ListDiagrams(ctx context.Context) ([]DiagramMeta, error) {
 func (db *DB) GetDiagram(ctx context.Context, id string) (*Diagram, error) {
 	var d Diagram
 	err := db.QueryRowContext(ctx,
-		"SELECT id, title, code, created_at, updated_at, sort_order FROM diagrams WHERE id = ?",
+		"SELECT id, title, code, created_at, updated_at FROM diagrams WHERE id = ?",
 		id,
-	).Scan(&d.ID, &d.Title, &d.Code, &d.CreatedAt, &d.UpdatedAt, &d.SortOrder)
+	).Scan(&d.ID, &d.Title, &d.Code, &d.CreatedAt, &d.UpdatedAt)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -141,8 +139,8 @@ func (db *DB) CreateDiagram(ctx context.Context, title, code string) (*Diagram, 
 	now := time.Now().UTC()
 
 	_, err := db.ExecContext(ctx,
-		"INSERT INTO diagrams (id, title, code, created_at, updated_at, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-		id, title, code, now, now, 0,
+		"INSERT INTO diagrams (id, title, code, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+		id, title, code, now, now,
 	)
 	if err != nil {
 		return nil, err
@@ -154,7 +152,6 @@ func (db *DB) CreateDiagram(ctx context.Context, title, code string) (*Diagram, 
 		Code:      code,
 		CreatedAt: now,
 		UpdatedAt: now,
-		SortOrder: 0,
 	}, nil
 }
 
@@ -217,8 +214,8 @@ func (db *DB) DuplicateDiagram(ctx context.Context, id string) (*Diagram, error)
 	now := time.Now().UTC()
 
 	_, err = db.ExecContext(ctx,
-		"INSERT INTO diagrams (id, title, code, created_at, updated_at, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-		newID, newTitle, src.Code, now, now, 0,
+		"INSERT INTO diagrams (id, title, code, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+		newID, newTitle, src.Code, now, now,
 	)
 	if err != nil {
 		return nil, err
@@ -230,7 +227,6 @@ func (db *DB) DuplicateDiagram(ctx context.Context, id string) (*Diagram, error)
 		Code:      src.Code,
 		CreatedAt: now,
 		UpdatedAt: now,
-		SortOrder: 0,
 	}, nil
 }
 

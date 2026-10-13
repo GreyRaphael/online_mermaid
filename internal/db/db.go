@@ -41,13 +41,19 @@ func (db *DB) initSchema(ctx context.Context) error {
 		title TEXT NOT NULL,
 		code TEXT NOT NULL,
 		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL,
-		sort_order INTEGER DEFAULT 0
+		updated_at DATETIME NOT NULL
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_diagrams_updated_at ON diagrams(updated_at DESC);
-	CREATE INDEX IF NOT EXISTS idx_diagrams_title ON diagrams(title);
 	`
-	_, err := db.ExecContext(ctx, query)
-	return err
+	if _, err := db.ExecContext(ctx, query); err != nil {
+		return err
+	}
+
+	// Best-effort cleanup of legacy schema objects (sort_order column and the
+	// unused title index). Errors are ignored: they just mean the object does
+	// not exist (e.g. freshly created databases).
+	_, _ = db.ExecContext(ctx, "ALTER TABLE diagrams DROP COLUMN sort_order")
+	_, _ = db.ExecContext(ctx, "DROP INDEX IF EXISTS idx_diagrams_title")
+	return nil
 }
