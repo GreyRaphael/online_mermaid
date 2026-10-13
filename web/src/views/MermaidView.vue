@@ -200,10 +200,16 @@ async function loadDiagramList(selectId?: string) {
   try {
     const list = await fetchDiagrams()
     diagrams.value = list
-    if (list.length > 0) {
-      const targetId = selectId || currentDiagram.value?.id || list[0].id
-      await selectDiagram(targetId)
+    if (list.length === 0) {
+      currentDiagram.value = null
+      editableCode.value = ''
+      return
     }
+    // Keep the current selection only if it still exists; otherwise fall back
+    // to the first item (e.g. right after deleting the current diagram).
+    const currentId = currentDiagram.value?.id
+    const targetId = selectId || (currentId && list.some((d) => d.id === currentId) ? currentId : list[0].id)
+    await selectDiagram(targetId)
   } catch (err: any) {
     showToast(err.message || '加载图表列表失败', true)
   }
@@ -234,10 +240,11 @@ async function handleCreateNew() {
 
 async function handleRename(id: string, newTitle: string) {
   try {
-    const isCurrent = currentDiagram.value?.id === id
-    const code = isCurrent ? editableCode.value : (await fetchDiagram(id)).code
-    await updateDiagram(id, newTitle, code)
-    if (isCurrent) currentDiagram.value!.title = newTitle
+    // The backend preserves the stored code when an empty code is sent, so a
+    // rename never touches diagram content — in particular it must not
+    // silently persist unsaved editor changes of the current diagram.
+    await updateDiagram(id, newTitle, '')
+    if (currentDiagram.value?.id === id) currentDiagram.value.title = newTitle
     await loadDiagramList(id)
     showToast('重命名成功')
   } catch (err: any) {
