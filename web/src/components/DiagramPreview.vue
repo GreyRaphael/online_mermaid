@@ -21,7 +21,6 @@ const emit = defineEmits<{
   openFullscreen: [svgHtml: string, sourceCode: string]
 }>()
 
-const previewContainerRef = ref<HTMLElement | null>(null)
 const outputRef = ref<HTMLElement | null>(null)
 const renderedSvg = ref<string>('')
 const renderError = ref<string>('')
@@ -220,7 +219,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="previewContainerRef" class="preview-container">
+  <div class="preview-container">
     <div class="preview-toolbar">
       <div class="toolbar-left">
         <span class="preview-tag">👁 实时预览</span>

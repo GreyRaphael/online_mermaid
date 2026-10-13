@@ -10,7 +10,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   save: []
-  scroll: [event: Event]
 }>()
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -53,11 +52,10 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-function handleScroll(e: Event) {
+function handleScroll() {
   if (lineNumbersRef.value && textareaRef.value) {
     lineNumbersRef.value.scrollTop = textareaRef.value.scrollTop
   }
-  emit('scroll', e)
 }
 
 function insertTemplate(tpl: MermaidTemplate) {
@@ -71,11 +69,6 @@ function insertTemplate(tpl: MermaidTemplate) {
 function closeTemplateMenu() {
   showTemplateMenu.value = false
 }
-
-defineExpose({
-  getTextarea: () => textareaRef.value,
-  focus: () => textareaRef.value?.focus(),
-})
 </script>
 
 <template>
