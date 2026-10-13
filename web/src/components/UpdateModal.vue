@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
           <div class="env-bar">
             <div class="env-item">
               <span class="env-label">当前版本</span>
-              <span class="env-value badge">{{ currentVersion || updateInfo?.current_version || 'v1.1.0' }}</span>
+              <span class="env-value badge">{{ currentVersion || updateInfo?.current_version || 'v1.1.1' }}</span>
             </div>
             <div v-if="updateInfo?.os" class="env-item">
               <span class="env-label">系统环境</span>
